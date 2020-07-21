@@ -1,0 +1,20 @@
+pipelines:
+  - name: pipeline_S_PS_Language_0016
+    steps:
+      - name: S_PS_Language_0016
+        type: PowerShell
+        configuration:
+          nodePool: win_2019
+          runtime:
+            type: image
+            image:
+              auto:
+                language: node
+                versions:
+                  - 12.18.2
+        execution:
+          onExecute:
+            - node -v
+            - if($(node -v) -ne "v12.18.2"){
+              Write-Error "Stop" -ErrorAction Stop
+              }
