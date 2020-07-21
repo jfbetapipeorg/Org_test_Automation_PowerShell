@@ -9,12 +9,11 @@ pipelines:
             type: image
             image:
               auto:
-                language: node
+                language: cpp
                 versions:
-                  - 12.18.2
+                  - 10.0.0
         execution:
           onExecute:
-            - node -v
-            - if($(node -v) -ne "v12.18.2"){
-              Write-Error "Stop" -ErrorAction Stop
-              }
+            - clang --version
+            - if($(clang --version) -Like "clang version 10.0.0 tags/RELEASE_900/final Target x86_64-pc-windows-msvc Thread model posix InstalledDir C\Program Files\LLVM\bin")
+              { Write-Error "Stop" -ErrorAction Stop}

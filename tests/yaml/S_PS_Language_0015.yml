@@ -9,12 +9,12 @@ pipelines:
             type: image
             image:
               auto:
-                language: node
+                language: go
                 versions:
-                  - 10.21.0
+                  - 1.14.4
         execution:
           onExecute:
-            - node -v
-            - if($(node -v) -ne "v10.21.0"){
+            - go version
+            - if($(go version) -ne "go version go1.14.4 windows/amd64"){
               Write-Error "Stop" -ErrorAction Stop
               }
