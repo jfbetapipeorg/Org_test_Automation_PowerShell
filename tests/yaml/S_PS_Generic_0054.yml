@@ -17,6 +17,6 @@ pipelines:
           onExecute:
             - write-output "executing step..."
             - node -v
-            - if($(node -v) -ne "v12.14.0"){
+            - if($(node -v) -ne "v12.18.2"){
               Write-Error "Stop" -ErrorAction Stop
               }
