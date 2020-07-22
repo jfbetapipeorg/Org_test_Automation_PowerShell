@@ -15,6 +15,6 @@ pipelines:
         execution:
           onExecute:
             - dotnet --version
-            - if($(dotnet --version) -ne "2.1.804"){
+            - if($(dotnet --version) -ne "2.1.807"){
               Write-Error "Stop" -ErrorAction Stop
               }
