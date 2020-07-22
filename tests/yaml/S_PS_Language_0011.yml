@@ -15,6 +15,6 @@ pipelines:
         execution:
           onExecute:
             - clang --version
-            - if($(clang --version) -Like "clang version 8.0.0 tags/RELEASE_900/final Target x86_64-pc-windows-msvc Thread model posix InstalledDir C\Program Files\LLVM\bin")
+            - if($(clang --version) -Like "clang version 9.0.0 tags/RELEASE_900/final Target x86_64-pc-windows-msvc Thread model posix InstalledDir C\Program Files\LLVM\bin")
               { Write-Error "Stop" -ErrorAction Stop} 
            

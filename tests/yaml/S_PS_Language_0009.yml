@@ -11,10 +11,10 @@ pipelines:
               auto:
                 language: go
                 versions:
-                  - 1.13.7
+                  - 1.13.12
         execution:
           onExecute:
             - go version
-            - if($(go version) -ne "go version go1.13.7 windows/amd64"){
+            - if($(go version) -ne "go version go1.13.12 windows/amd64"){
               Write-Error "Stop" -ErrorAction Stop
               }

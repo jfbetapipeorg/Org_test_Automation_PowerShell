@@ -11,10 +11,10 @@ pipelines:
               auto:
                 language: node
                 versions:
-                  - 12.14.0
+                  - 12.18.2
         execution:
           onExecute:
             - node -v
-            - if($(node -v) -ne "v12.14.0"){
+            - if($(node -v) -ne "v12.18.2"){
               Write-Error "Stop" -ErrorAction Stop
               }
