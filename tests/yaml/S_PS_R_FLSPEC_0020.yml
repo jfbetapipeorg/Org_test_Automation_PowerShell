@@ -1,0 +1,24 @@
+resources:
+  - name: S_PS_R_FLSPEC_0020
+    type: FileSpec
+    configuration:
+      sourceArtifactory: s_artifactory
+      pattern: "*/s_foo*"
+      limit: 1
+      excludePatterns:
+        - "*/pipeInfo.json"
+      target: 'C:\Users\pipelines\Desktop\'
+pipelines:
+  - name: pipelines_S_PS_R_FLSPEC_0020
+    steps:
+      - name: S_PS_R_FLSPEC_0020
+        type: PowerShell
+        configuration:
+          nodePool: win_2019
+          inputResources:
+            - name: S_PS_R_FLSPEC_0020
+        execution:
+          onExecute:
+            - write-output "executing step..."
+            - if (Test-Path "C:\Users\pipelines\Desktop\s_foo"){ Write-Output "found the file" }
+            - if (!(Test-Path "C:\Users\pipelines\Desktop\s_foo")){ Write-Error "error finding the file" -ErrorAction Stop }
