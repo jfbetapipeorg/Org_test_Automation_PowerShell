@@ -5,7 +5,7 @@ resources:
       sourceArtifactory: s_artifactory
       pattern: "*/s_foo*"
       limit: 1
-      excludePatterns:
+      exclusions:
         - "*/pipeInfo.json"
       target: 'C:\Users\pipelines\Desktop\'
 pipelines:
