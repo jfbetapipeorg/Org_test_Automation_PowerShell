@@ -1,0 +1,22 @@
+resources:
+  - name: S_PS_R_FLSPEC_0022
+    type: FileSpec
+    configuration:
+      sourceArtifactory: s_artifactory
+      pattern: "*/s_foo*"
+      limit: 1
+      sortBy:
+        - "*/pip\"eIn\"fo.json"
+      target: 'C:\Users\pipelines\Desktop\'
+pipelines:
+  - name: pipelines_S_PS_R_FLSPEC_0022
+    steps:
+      - name: S_PS_R_FLSPEC_0022
+        type: PowerShell
+        configuration:
+          nodePool: win_2019
+          inputResources:
+            - name: S_PS_R_FLSPEC_0022
+        execution:
+          onExecute:
+            - write-output "executing step..."
