@@ -1,0 +1,18 @@
+resources:
+  - name: S_PS_UTIL_0074_output
+    type: PropertyBag
+    configuration:
+      testItem: testValue
+
+pipelines:
+  - name: S_PS_UTIL_0074
+    steps:
+      - name: S_PS_UTIL_0074
+        type: PowerShell
+        configuration:
+          nodePool: win_2019
+          outputResources:
+            - name: S_PS_UTIL_0074_output
+        execution:
+          onExecute:
+            - write_output S_PS_UTIL_0074_output "test="
