@@ -9,4 +9,6 @@ pipelines:
         execution:
           onExecute:
             - touch s_foo
+            - touch pipeInfo.json
             - jfrog rt u s_foo example-repo-local/s_foo
+            - jfrog rt u pipeInfo.json example-repo-local/pipeInfo.json

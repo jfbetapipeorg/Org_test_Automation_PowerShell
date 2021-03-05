@@ -9,3 +9,5 @@ pipelines:
         execution:
           onExecute:
             - jfrog rt del --quiet=true example-repo-local/s_foo
+            - jfrog rt del --quiet=true example-repo-local/pipeInfo.json
+

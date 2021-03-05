@@ -21,4 +21,5 @@ pipelines:
           onExecute:
             - write-output "executing step..."
             - if (Test-Path "C:\Users\pipelines\Desktop\s_foo"){ Write-Output "found the file" }
+            - if (Test-Path "C:\Users\pipelines\Desktop\pipeInfo.json"){ Write-Error "found the wrong file" -ErrorAction Stop }
             - if (!(Test-Path "C:\Users\pipelines\Desktop\s_foo")){ Write-Error "error finding the file" -ErrorAction Stop }
