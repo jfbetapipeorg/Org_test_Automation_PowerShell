@@ -1,0 +1,47 @@
+resources:
+  - name: EXT_S_PS_AU_0013_fileSpec
+    type: FileSpec
+    configuration:
+      sourceArtifactory: s_artifactory
+      pattern: "test-automation-generic-local/EXT_S_PS_AU_0013_*"
+
+pipelines:
+  - name: pipeline_EXT_S_PS_AU_0013
+    configuration:
+      nodePool: win_2019
+    steps:
+      - name: EXT_S_PS_AU_0013_1
+        type: PowerShell
+        configuration:
+          integrations:
+            - name: s_artifactory
+          outputResources:
+            - name: EXT_S_PS_AU_0013_fileSpec
+        execution:
+          onExecute:
+            - Set-Content -Path EXT_S_PS_AU_0013_file.txt -Value ${run_id}
+            - jfrog rt upload EXT_S_PS_AU_0013_file.txt test-automation-generic-local/EXT_S_PS_AU_0013_file1.txt
+            - jfrog rt upload EXT_S_PS_AU_0013_file.txt test-automation-generic-local/EXT_S_PS_AU_0013_file2/EXT_S_PS_AU_0013_file2.txt
+
+      - name: EXT_S_PS_AU_0013_2
+        type: UploadArtifact
+        configuration:
+          targetPath: test-automation-generic-local/EXT_S_PS_AU_0013/
+          recursive: false
+          integrations:
+            - name: s_artifactory
+          inputResources:
+            - name: EXT_S_PS_AU_0013_fileSpec
+
+      - name: EXT_S_PS_AU_0013_3
+        type: PowerShell
+        configuration:
+          integrations:
+            - name: s_artifactory
+          inputSteps:
+            - name: EXT_S_PS_AU_0013_2
+        execution:
+          onExecute:
+            - jfrog rt download test-automation-generic-local/EXT_S_PS_AU_0013/* ./
+            - if (Test-Path "EXT_S_PS_AU_0013\EXT_S_PS_AU_0013_file2\EXT_S_PS_AU_0013_file2.txt" -PathType Leaf) { throw "File not found" }
+            - if ( -not (Test-Path "EXT_S_PS_AU_0013\EXT_S_PS_AU_0013_file1.txt" -PathType Leaf)) { throw "File not found" }

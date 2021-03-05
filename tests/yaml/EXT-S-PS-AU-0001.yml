@@ -1,0 +1,44 @@
+resources:
+  - name: EXT_S_PS_AU_0001_fileSpec
+    type: FileSpec
+    configuration:
+      sourceArtifactory: s_artifactory
+      pattern: "test-automation-generic-local/EXT_S_PS_AU_0001_fileSpec.txt"
+
+pipelines:
+  - name: pipeline_EXT_S_PS_AU_0001
+    configuration:
+      nodePool: win_2019
+    steps:
+      - name: EXT_S_PS_AU_0001_1
+        type: PowerShell
+        configuration:
+          integrations:
+            - name: s_artifactory
+          outputResources:
+            - name: EXT_S_PS_AU_0001_fileSpec
+        execution:
+          onExecute:
+            - Set-Content -Path EXT_S_PS_AU_0001_fileSpec.txt -Value ${run_id}
+            - jfrog rt upload EXT_S_PS_AU_0001_fileSpec.txt test-automation-generic-local
+
+      - name: EXT_S_PS_AU_0001_2
+        type: UploadArtifact
+        configuration:
+          targetPath: test-automation-generic-local/EXT_S_PS_AU_0001.txt
+          integrations:
+            - name: s_artifactory
+          inputResources:
+            - name: EXT_S_PS_AU_0001_fileSpec
+
+      - name: EXT_S_PS_AU_0001_3
+        type: PowerShell
+        configuration:
+          integrations:
+            - name: s_artifactory
+          inputSteps:
+            - name: EXT_S_PS_AU_0001_2
+        execution:
+          onExecute:
+            - jfrog rt download test-automation-generic-local/EXT_S_PS_AU_0001.txt EXT_S_PS_AU_0001.txt
+            - if ( (type EXT_S_PS_AU_0001.txt) -ne "$run_id" ) { throw "wrong file contents" }

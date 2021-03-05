@@ -1,0 +1,50 @@
+resources:
+  - name: EXT_S_PS_AU_0006_fileSpec
+    type: FileSpec
+    configuration:
+      sourceArtifactory: s_artifactory
+      pattern: "test-automation-generic-local/EXT_S_PS_AU_0006_fileSpec.txt"
+
+  - name: EXT_S_PS_AU_0006_buildInfo
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: s_artifactory
+
+pipelines:
+  - name: pipeline_EXT_S_PS_AU_0006
+    configuration:
+      nodePool: win_2019
+    steps:
+      - name: EXT_S_PS_AU_0006_1
+        type: PowerShell
+        configuration:
+          integrations:
+            - name: s_artifactory
+          outputResources:
+            - name: EXT_S_PS_AU_0006_fileSpec
+        execution:
+          onExecute:
+            - Set-Content -Path EXT_S_PS_AU_0006_fileSpec.txt -Value ${run_id}
+            - jfrog rt upload EXT_S_PS_AU_0006_fileSpec.txt test-automation-generic-local
+
+      - name: EXT_S_PS_AU_0006_2
+        type: UploadArtifact
+        configuration:
+          targetPath: test-automation-generic-local/EXT_S_PS_AU_0006.txt
+          autoPublishBuildInfo: true
+          integrations:
+            - name: s_artifactory
+          inputResources:
+            - name: EXT_S_PS_AU_0006_fileSpec
+          outputResources:
+            - name: EXT_S_PS_AU_0006_buildInfo
+
+      - name: EXT_S_PS_AU_0006_3
+        type: PowerShell
+        configuration:
+          inputResources:
+            - name: EXT_S_PS_AU_0006_buildInfo
+        execution:
+          onExecute:
+            - if ( "$res_EXT_S_PS_AU_0006_buildInfo_buildNumber" -ne "$run_number" ) { throw "Build number $res_EXT_S_PS_AU_0006_buildInfo_buildNumber"}
+            - if ( "$res_EXT_S_PS_AU_0006_buildInfo_buildName" -ne "pipeline_EXT_S_PS_AU_0006" ) { throw "Build name $res_EXT_S_PS_AU_0006_buildInfo_buildName"}

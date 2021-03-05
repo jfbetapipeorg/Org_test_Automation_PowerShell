@@ -1,0 +1,50 @@
+resources:
+  - name: EXT_S_PS_AU_0009_fileSpec
+    type: FileSpec
+    configuration:
+      sourceArtifactory: s_artifactory
+      pattern: "test-automation-generic-local/EXT_S_PS_AU_0009_inputs/*"
+
+pipelines:
+  - name: pipeline_EXT_S_PS_AU_0009
+    configuration:
+      nodePool: win_2019
+    steps:
+      - name: EXT_S_PS_AU_0009_1
+        type: PowerShell
+        configuration:
+          integrations:
+            - name: s_artifactory
+          outputResources:
+            - name: EXT_S_PS_AU_0009_fileSpec
+        execution:
+          onExecute:
+            - Set-Content -Path EXT_S_PS_AU_0009_file.txt -Value ${run_id}
+            - jfrog rt upload EXT_S_PS_AU_0009_file.txt test-automation-generic-local/EXT_S_PS_AU_0009_inputs/EXT_S_PS_AU_0009_file1.txt
+            - jfrog rt upload EXT_S_PS_AU_0009_file.txt test-automation-generic-local/EXT_S_PS_AU_0009_inputs/2/EXT_S_PS_AU_0009_file2.txt
+
+      - name: EXT_S_PS_AU_0009_2
+        type: UploadArtifact
+        configuration:
+          targetPath: test-automation-generic-local/EXT_S_PS_AU_0009/
+          flat: true
+          integrations:
+            - name: s_artifactory
+          inputResources:
+            - name: EXT_S_PS_AU_0009_fileSpec
+
+      - name: EXT_S_PS_AU_0009_3
+        type: PowerShell
+        configuration:
+          integrations:
+            - name: s_artifactory
+          inputSteps:
+            - name: EXT_S_PS_AU_0009_2
+        execution:
+          onExecute:
+            - jfrog rt download test-automation-generic-local/EXT_S_PS_AU_0009/* ./
+            - if ( -not (Test-Path "EXT_S_PS_AU_0009\EXT_S_PS_AU_0009_file1.txt" -PathType Leaf)) { throw "File not found" }
+            - if ( -not (Test-Path "EXT_S_PS_AU_0009\EXT_S_PS_AU_0009_file2.txt" -PathType Leaf)) { throw "File not found" }
+            - jfrog rt download test-automation-generic-local/EXT_S_PS_AU_0009_inputs/* ./
+            - if ( -not (Test-Path "EXT_S_PS_AU_0009_inputs\EXT_S_PS_AU_0009_file1.txt" -PathType Leaf)) { throw "File not found" }
+            - if ( -not (Test-Path "EXT_S_PS_AU_0009_inputs\2\EXT_S_PS_AU_0009_file2.txt" -PathType Leaf)) { throw "File not found" }

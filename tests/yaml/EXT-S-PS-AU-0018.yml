@@ -1,0 +1,51 @@
+resources:
+  - name: EXT_S_PS_AU_0018_fileSpec
+    type: FileSpec
+    configuration:
+      sourceArtifactory: s_artifactory
+      pattern: "test-automation-generic-local/EXT_S_PS_AU_0018/*"
+
+pipelines:
+  - name: pipeline_EXT_S_PS_AU_0018
+    configuration:
+      nodePool: win_2019
+    steps:
+      - name: EXT_S_PS_AU_0018_1
+        type: PowerShell
+        configuration:
+          integrations:
+            - name: s_artifactory
+          outputResources:
+            - name: EXT_S_PS_AU_0018_fileSpec
+        execution:
+          onExecute:
+            - Set-Content -Path EXT_S_PS_AU_0018_file.txt -Value ${run_id}
+            - jfrog rt upload EXT_S_PS_AU_0018_file.txt test-automation-generic-local/EXT_S_PS_AU_0018/1/EXT_S_PS_AU_0018_file1.txt
+            - jfrog rt upload EXT_S_PS_AU_0018_file.txt test-automation-generic-local/EXT_S_PS_AU_0018/1/EXT_S_PS_AU_0018_file2.txt
+            - jfrog rt upload EXT_S_PS_AU_0018_file.txt test-automation-generic-local/EXT_S_PS_AU_0018/2/EXT_S_PS_AU_0018_file3.txt
+            - jfrog rt upload EXT_S_PS_AU_0018_file.txt test-automation-generic-local/EXT_S_PS_AU_0018/2/EXT_S_PS_AU_0018_file4.txt
+
+      - name: EXT_S_PS_AU_0018_2
+        type: UploadArtifact
+        configuration:
+          targetPath: test-automation-generic-local/EXT_S_PS_AU_0018/
+          sourcePath: EXT_S_PS_AU_0018/1/
+          syncDeletes: test-automation-generic-local/EXT_S_PS_AU_0018/
+          integrations:
+            - name: s_artifactory
+          inputResources:
+            - name: EXT_S_PS_AU_0018_fileSpec
+
+      - name: EXT_S_PS_AU_0018_3
+        type: PowerShell
+        configuration:
+          integrations:
+            - name: s_artifactory
+          inputSteps:
+            - name: EXT_S_PS_AU_0018_2
+        execution:
+          onExecute:
+            - jfrog rt download test-automation-generic-local/EXT_S_PS_AU_0018/* ./
+            - if ( Test-Path "EXT_S_PS_AU_0018\EXT_S_PS_AU_0018_file3.txt" -PathType Leaf ) { throw "File found" }
+            - if ( Test-Path "EXT_S_PS_AU_0018\EXT_S_PS_AU_0018_file4.txt" -PathType Leaf ) { throw "File found" }
+            - if ( -not (Test-Path "EXT_S_PS_AU_0018\EXT_S_PS_AU_0018_file1.txt" -PathType Leaf)) { throw "File not found" }

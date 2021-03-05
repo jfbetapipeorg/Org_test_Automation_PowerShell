@@ -1,0 +1,32 @@
+pipelines:
+  - name: pipeline_EXT_S_PS_AU_0015
+    configuration:
+      nodePool: win_2019
+    steps:
+      - name: EXT_S_PS_AU_0015_1
+        type: UploadArtifact
+        configuration:
+          targetPath: test-automation-generic-local/EXT_S_PS_AU_0015/
+          symlinks: true
+          integrations:
+            - name: s_artifactory
+        execution:
+          onStart:
+            - New-Item -Path "${step_tmp_dir}\" -Name "ArtifactUpload" -ItemType Directory
+            - Push-Location "${step_tmp_dir}\ArtifactUpload"
+            - Set-Content -Path EXT_S_PS_AU_0015.txt -Value ${run_id}
+            - New-Item -Path EXT_S_PS_AU_0015_symlink -ItemType SymbolicLink -Value EXT_S_PS_AU_0015.txt
+            - Pop-Location
+
+      - name: EXT_S_PS_AU_0015_2
+        type: PowerShell
+        configuration:
+          integrations:
+            - name: s_artifactory
+          inputSteps:
+            - name: EXT_S_PS_AU_0015_1
+        execution:
+          onExecute:
+            - jfrog rt download test-automation-generic-local/EXT_S_PS_AU_0015/* ./
+            - if ( -not (Test-Path "EXT_S_PS_AU_0015\EXT_S_PS_AU_0015.txt" -PathType Leaf)) { throw "File not found" }
+            - if ( -not (Test-Path "EXT_S_PS_AU_0015\EXT_S_PS_AU_0015_symlink" -PathType Leaf)) { throw "File not found" }
