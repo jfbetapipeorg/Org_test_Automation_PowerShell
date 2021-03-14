@@ -1,0 +1,40 @@
+pipelines:
+  - name: pipelines_S_PS_Generic_0063
+    steps:
+      - name: S_PS_Generic_0063_1
+        type: PowerShell
+        configuration:
+          nodePool: win_2019
+          integrations:
+            - name: s_artifactory
+        execution:
+          onExecute:
+            - |
+              $artifactory_url = [System.Uri]$int_s_artifactory_url
+              $artifactory_registry_host = $artifactory_url.Host
+              $artifactory_registry_port = $artifactory_url.Port
+              add_run_variables artifactory_registry_url="${artifactory_registry_host}:${artifactory_registry_port}"
+              add_run_variables imageName="${artifactory_registry_url}/test-automation-docker-local/s_ps_generic_0063"
+              add_run_variables imageTag="${run_id}"
+              Set-Content -Path Dockerfile -Value "FROM releases-docker.jfrog.io/jfrog/pipelines-w19dotnetcore:3.1"
+              docker build --rm=true -t ${imageName}:${imageTag} .
+              jfrog rt docker-push ${imageName}:${imageTag} test-automation-docker-local
+              docker rmi ${imageName}:${imageTag}
+
+      - name: S_PS_Generic_0063_2
+        type: PowerShell
+        configuration:
+          nodePool: win_2019
+          runtime:
+            type: image
+            image:
+              custom:
+                name: ${imageName}
+                tag: ${run_id}
+                registry: s_artifactory
+                sourceRepository: test-automation-docker-local
+          inputSteps:
+            - name: S_PS_Generic_0063_1
+        execution:
+          onExecute:
+            - if (-not (docker images -q ${imageName}:${imageTag})) { throw "Image not found" }

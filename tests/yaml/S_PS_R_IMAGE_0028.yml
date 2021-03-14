@@ -1,0 +1,48 @@
+resources:
+  - name: S_PS_R_IMAGE_0028_Image
+    type: Image
+    configuration:
+      registry: s_artifactory
+      sourceRepository: test-automation-docker-local
+      imageName: ${artifactory_registry_url}/test-automation-docker-local/s_ps_r_image_0028
+      imageTag: ${run_id}
+      autoPull: true
+
+pipelines:
+  - name: pipelines_S_PS_R_IMAGE_0028
+    steps:
+      - name: S_PS_R_IMAGE_0028_1
+        type: PowerShell
+        configuration:
+          nodePool: win_2019
+          integrations:
+            - name: s_artifactory
+          outputResources:
+            - name: S_PS_R_IMAGE_0028_Image
+        execution:
+          onExecute:
+            - |
+              $artifactory_url = [System.Uri]$int_s_artifactory_url
+              $artifactory_registry_host = $artifactory_url.Host
+              $artifactory_registry_port = $artifactory_url.Port
+              add_run_variables artifactory_registry_url="${artifactory_registry_host}:${artifactory_registry_port}"
+              Set-Content -Path Dockerfile -Value "FROM releases-docker.jfrog.io/jfrog/pipelines-w19dotnetcore:3.1"
+              $imageName = "${artifactory_registry_url}/test-automation-docker-local/s_ps_r_image_0028"
+              $imageTag = "${run_id}"
+              docker build --rm=true -t ${imageName}:${imageTag} .
+              jfrog rt docker-push ${imageName}:${imageTag} ${res_S_PS_R_IMAGE_0028_Image_sourceRepository}
+              docker rmi ${imageName}:${imageTag}
+
+      - name: S_PS_R_IMAGE_0028_2
+        type: PowerShell
+        configuration:
+          nodePool: win_2019
+          inputResources:
+            - name: S_PS_R_IMAGE_0028_Image
+        execution:
+          onExecute:
+            - |
+              $imageName = find_resource_variable S_PS_R_IMAGE_0028_Image imageName
+              $imageTag = find_resource_variable S_PS_R_IMAGE_0028_Image imageTag
+              $image = docker images -q ${imageName}:${imageTag}
+              if (-not $image) { throw "Image not found" }

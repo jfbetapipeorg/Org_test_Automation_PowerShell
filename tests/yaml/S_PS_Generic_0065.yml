@@ -1,0 +1,12 @@
+pipelines:
+  - name: pipelines_S_PS_Generic_0065
+    steps:
+      - name: S_PS_Generic_0065
+        type: PowerShell
+        configuration:
+          nodePool: win_2019
+        execution:
+          onExecute:
+            - Write-Output "$JFROG_CLI_BUILD_PROJECT"
+            - Write-Output "$project_key"
+            - if ( "$JFROG_CLI_BUILD_PROJECT" -ne "${project_key}" ) { throw "Wrong project key" }
