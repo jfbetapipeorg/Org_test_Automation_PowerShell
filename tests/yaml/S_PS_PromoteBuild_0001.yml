@@ -1,0 +1,42 @@
+resources:
+  - name: S_PS_PromoteBuild_0001_input
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: s_artifactory
+      buildName: name
+      buildNumber: '1'
+  - name: S_PS_PromoteBuild_0001_output
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: s_artifactory
+      buildName: name
+      buildNumber: '1'
+
+pipelines:
+  - name: pipeline_S_PS_PromoteBuild_0001
+    steps:
+      - name: S_PS_PromoteBuild_0001_1
+        type: PowerShell
+        configuration:
+          integrations:
+            - name: s_artifactory
+          outputResources:
+            - name: S_PS_PromoteBuild_0001_input
+        execution:
+          onExecute:
+            - Set-Content -Path S_PS_PromoteBuild_0001.txt -Value "${run_id}"
+            - jfrog rt upload S_PS_PromoteBuild_0001.txt test-automation-generic-local
+            - jfrog rt build-publish ${JFROG_CLI_BUILD_NAME} ${JFROG_CLI_BUILD_NUMBER}
+            - write_output S_PS_PromoteBuild_0001_input buildName=${JFROG_CLI_BUILD_NAME} buildNumber=${JFROG_CLI_BUILD_NUMBER}
+      - name: S_PS_PromoteBuild_0001_2
+        type: PromoteBuild
+        configuration:
+          targetRepository: test-automation-generic-promoted-local
+          includeDependencies: true
+          status: TEST
+          copy: true
+          comment: "Promoted by run number ${run_number}."
+          inputResources:
+            - name: S_PS_PromoteBuild_0001_input
+          outputResources:
+            - name: S_PS_PromoteBuild_0001_output
