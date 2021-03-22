@@ -1,0 +1,43 @@
+resources:
+  - name: S_PS_PublishBuildInfo_0001_output
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: s_artifactory
+      buildName: 'name'
+      buildNumber: '1'
+
+pipelines:
+  - name: pipeline_S_PS_PublishBuildInfo_0001
+    steps:
+      - name: S_PS_PublishBuildInfo_0001_1
+        type: PowerShell
+        configuration:
+          nodePool: win_2019
+          integrations:
+            - name: s_artifactory
+        execution:
+          onExecute:
+            - Set-Content -Path S_PS_PublishBuildInfo_0001.txt -Value ${run_id}
+            - Invoke-Expression "$jfrog_cli_path rt upload S_PS_PublishBuildInfo_0001.txt test-automation-generic-local"
+            - add_run_files (Join-Path ([System.IO.Path]::GetTempPath()) jfrog) jfrog
+            - add_run_variables buildName=${JFROG_CLI_BUILD_NAME} buildNumber=${JFROG_CLI_BUILD_NUMBER}
+      - name: S_PS_PublishBuildInfo_0001_2
+        type: PublishBuildInfo
+        configuration:
+          nodePool: win_2019
+          outputResources:
+            - name: S_PS_PublishBuildInfo_0001_output
+          inputSteps:
+            - name: S_PS_PublishBuildInfo_0001_1
+      - name: S_PS_PublishBuildInfo_0001_3
+        type: PowerShell
+        configuration:
+          nodePool: win_2019
+          integrations:
+            - name: s_artifactory
+          inputResources:
+            - name: S_PS_PublishBuildInfo_0001_output
+        execution:
+          onExecute:
+            - jfrog rt download --fail-no-op --insecure-tls=${no_verify_ssl} --limit=1 --flat "artifactory-build-info/${buildName}/${buildNumber}-*.json" "buildInfo.json"
+            - jfrog rt curl -XDELETE "/api/build/${buildName}?buildNumbers=${buildNumber}&artifacts=1"
