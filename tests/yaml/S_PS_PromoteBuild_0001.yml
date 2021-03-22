@@ -14,6 +14,8 @@ resources:
 
 pipelines:
   - name: pipeline_S_PS_PromoteBuild_0001
+    configuration:
+      nodePool: win_2019
     steps:
       - name: S_PS_PromoteBuild_0001_1
         type: PowerShell
