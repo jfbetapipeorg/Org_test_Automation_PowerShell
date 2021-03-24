@@ -1,13 +1,12 @@
 pipelines:
   - name: pipelines_S_Bash_FileSpec_Delete
     steps:
-      - name: S_FileSpec_Delete
+      - name: S_PS_FileSpec_Delete
         type: Bash
         configuration:
           integrations:
             - name: s_artifactory
         execution:
           onExecute:
-            - jfrog rt del --quiet=true example-repo-local/s_foo
-            - jfrog rt del --quiet=true example-repo-local/pipeInfo.json
-
+            - jfrog rt del --quiet=true example-powershell-local/s_foo
+            - jfrog rt del --quiet=true example-powershell-local/pipeInfo.json

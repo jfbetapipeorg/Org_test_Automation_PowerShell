@@ -4,7 +4,7 @@ resources:
     type: FileSpec
     configuration:
       sourceArtifactory: s_artifactory
-      aql: items.find({"repo":{"example-repo-local/testing"}})
+      aql: items.find({"repo":{"example-powershell-local/testing"}})
 
 pipelines:
 
