@@ -5,7 +5,7 @@ resources:
     type: FileSpec
     configuration:
       sourceArtifactory: s_artifactory
-      pattern: "example-powershell-local/setup/test.sh"
+      pattern: "test-automation-generic-local/fileSpecPowerShell/setup/test.sh"
       recursive: false
 
 pipelines:

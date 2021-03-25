@@ -8,11 +8,7 @@ pipelines:
             - name: s_artifactory
         execution:
           onExecute:
-            - request='{"key":"example-powershell-local", "rclass":"local", "packageType":"generic", "description":"This repo is a test repo used by test automation", "repoLayoutRef":"simple-default"}'
-            - echo $request > request.json
-            - jfrog rt repo-delete example-powershell-local --quiet || true
-            - jfrog rt repo-create request.json
             - touch s_foo
             - touch pipeInfo.json
-            - jfrog rt u s_foo example-powershell-local/s_foo
-            - jfrog rt u pipeInfo.json example-powershell-local/pipeInfo.json
+            - jfrog rt u s_foo test-automation-generic-local/fileSpecPowerShell/s_foo
+            - jfrog rt u pipeInfo.json test-automation-generic-local/fileSpecPowerShell/pipeInfo.json

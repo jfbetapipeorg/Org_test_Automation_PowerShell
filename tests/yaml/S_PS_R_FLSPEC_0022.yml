@@ -3,7 +3,7 @@ resources:
     type: FileSpec
     configuration:
       sourceArtifactory: s_artifactory
-      pattern: example-powershell-local
+      pattern: test-automation-generic-local/fileSpecPowerShell
       recursive: false
       sortBy:
         - invalid

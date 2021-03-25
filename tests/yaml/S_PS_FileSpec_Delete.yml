@@ -8,5 +8,5 @@ pipelines:
             - name: s_artifactory
         execution:
           onExecute:
-            - jfrog rt del --quiet=true example-powershell-local/s_foo
-            - jfrog rt del --quiet=true example-powershell-local/pipeInfo.json
+            - jfrog rt del --quiet=true test-automation-generic-local/fileSpecPowerShell/s_foo
+            - jfrog rt del --quiet=true test-automation-generic-local/fileSpecPowerShell/pipeInfo.json
