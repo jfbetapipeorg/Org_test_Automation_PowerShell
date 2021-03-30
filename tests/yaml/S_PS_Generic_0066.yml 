@@ -1,0 +1,32 @@
+resources:
+  - name: S_PS_Generic_0066_GitRepo
+    type: GitRepo
+    configuration:
+      path: jfbetapipeorg/Org_test_Automation_PowerShell
+      gitProvider: s_gitHub
+      branches:
+        include: ^{{gitBranch}}$
+
+pipelines:
+  - name: pipelines_PS_Generic_0066
+    configuration:
+      runtime:
+        type: image
+        image:
+          auto:
+            language: node
+            versions:
+              - "10.18.0"
+    steps:
+       - name: S_PS_Generic_0066
+         type: PowerShell
+         configuration:
+           inputResources:
+              - name: S_PS_Generic_0066_GitRepo
+         execution:
+           onExecute:
+             - Push-Location $res_S_PS_Generic_0066_GitRepo_resourcePath/tests/core/oom
+             - fsutil file createnew output.dat 104857600 #100MB
+             - Get-ChildItem
+             - node oom.js
+             - Pop-Location
