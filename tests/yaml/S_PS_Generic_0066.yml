@@ -21,6 +21,7 @@ pipelines:
        - name: S_PS_Generic_0066
          type: PowerShell
          configuration:
+           nodePool: win_2019
            inputResources:
               - name: S_PS_Generic_0066_GitRepo
          execution:
