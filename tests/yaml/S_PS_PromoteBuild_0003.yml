@@ -1,0 +1,59 @@
+resources:
+  - name: S_PS_PromoteBuild_0003_input
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: s_artifactory
+      buildName: name
+      buildNumber: '1'
+  - name: S_PS_PromoteBuild_0003_output
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: s_artifactory
+      buildName: name
+      buildNumber: '1'
+
+pipelines:
+  - name: pipeline_S_PS_PromoteBuild_0003
+    configuration:
+      nodePool: win_2019
+      environmentVariables:
+        readOnly:
+          target: test-automation-generic-promoted-local
+    steps:
+      - name: S_PS_PromoteBuild_0003_1
+        type: PowerShell
+        configuration:
+          nodePool: win_2019
+          integrations:
+            - name: s_artifactory
+          outputResources:
+            - name: S_PS_PromoteBuild_0003_input
+        execution:
+          onExecute:
+            - Set-Content -Path S_PS_PromoteBuild_0003.txt -Value ${run_id}
+            - jfrog rt upload S_PS_PromoteBuild_0003.txt test-automation-generic-local
+            - jfrog rt build-publish ${JFROG_CLI_BUILD_NAME} ${JFROG_CLI_BUILD_NUMBER}
+            - write_output S_PS_PromoteBuild_0003_input buildName=${JFROG_CLI_BUILD_NAME} buildNumber=${JFROG_CLI_BUILD_NUMBER}
+      - name: S_PS_PromoteBuild_0003_2
+        type: PromoteBuild
+        configuration:
+          targetRepository: ${target}
+          inputResources:
+            - name: S_PS_PromoteBuild_0003_input
+          outputResources:
+            - name: S_PS_PromoteBuild_0003_output
+      - name: S_PS_PromoteBuild_0003_3
+        type: PowerShell
+        configuration:
+          nodePool: win_2019
+          integrations:
+            - name: s_artifactory
+          inputResources:
+            - name: S_PS_PromoteBuild_0003_output
+        execution:
+          onExecute:
+            - if ("$res_S_PS_PromoteBuild_0003_output_buildName" -ne "${JFROG_CLI_BUILD_NAME}") { throw("failed") }
+            - if ("$res_S_PS_PromoteBuild_0003_output_buildNumber" -ne "${JFROG_CLI_BUILD_NUMBER}") { throw("failed") }
+            - jfrog rt download --fail-no-op --insecure-tls=${no_verify_ssl} --limit=1 --flat "test-automation-generic-promoted-local/S_PS_PromoteBuild_0003.txt" "S_PS_PromoteBuild_0003.txt"
+            - jfrog rt download --fail-no-op --insecure-tls=${no_verify_ssl} --limit=1 --flat "artifactory-build-info/${JFROG_CLI_BUILD_NAME}/${JFROG_CLI_BUILD_NUMBER}-*.json" "buildInfo.json"
+            - jfrog rt curl -XDELETE "/api/build/${JFROG_CLI_BUILD_NAME}?buildNumbers=${JFROG_CLI_BUILD_NUMBER}&artifacts=1"

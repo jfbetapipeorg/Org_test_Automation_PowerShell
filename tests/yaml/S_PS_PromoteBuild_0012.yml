@@ -1,0 +1,73 @@
+resources:
+  - name: S_PS_PromoteBuild_0012_input
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: s_artifactory
+      buildName: name
+      buildNumber: '1'
+  - name: S_PS_PromoteBuild_0012_output
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: s_artifactory
+      buildName: name
+      buildNumber: '1'
+
+pipelines:
+  - name: pipeline_S_PS_PromoteBuild_0012_1
+    steps:
+      - name: S_PS_PromoteBuild_0012_1
+        type: Powershell
+        configuration:
+          nodePool: win_2019
+          integrations:
+            - name: s_artifactory
+        execution:
+          onExecute:
+            - Set-Content -Path S_PS_PromoteBuild_0012_1.txt -Value ${run_id}
+            - jfrog rt upload S_PS_PromoteBuild_0012_1.txt test-automation-generic-local
+
+  - name: pipeline_S_PS_PromoteBuild_0012_2
+    configuration:
+      environmentVariables:
+        readOnly:
+          dependencies: "true"
+    steps:
+      - name: S_PS_PromoteBuild_0012_2
+        type: Powershell
+        configuration:
+          nodePool: win_2019
+          environmentVariables:
+            JFROG_CLI_BUILD_NAME: S_PS_PromoteBuild_0012_2
+          integrations:
+            - name: s_artifactory
+          outputResources:
+            - name: S_PS_PromoteBuild_0012_input
+        execution:
+          onExecute:
+            - Set-Content -Path S_PS_PromoteBuild_0012_2.txt -Value ${run_id}
+            - jfrog rt upload S_PS_PromoteBuild_0012_2.txt test-automation-generic-local
+            - jfrog rt download --limit=1 --flat "test-automation-generic-local/S_PS_PromoteBuild_0012_1.txt" "dependency.txt"
+            - jfrog rt build-publish $JFROG_CLI_BUILD_NAME $JFROG_CLI_BUILD_NUMBER
+            - write_output S_PS_PromoteBuild_0012_input buildName=$JFROG_CLI_BUILD_NAME buildNumber=$JFROG_CLI_BUILD_NUMBER
+      - name: S_PS_PromoteBuild_0012_3
+        type: PromoteBuild
+        configuration:
+          nodePool: win_2019
+          targetRepository: test-automation-generic-promoted-local
+          includeDependencies: ${dependencies}
+          inputResources:
+            - name: S_PS_PromoteBuild_0012_input
+          outputResources:
+            - name: S_PS_PromoteBuild_0012_output
+      - name: S_PS_PromoteBuild_0012_4
+        type: PowerShell
+        configuration:
+          nodePool: win_2019
+          integrations:
+            - name: s_artifactory
+          inputResources:
+            - name: S_PS_PromoteBuild_0012_output
+        execution:
+          onExecute:
+            - jfrog rt download --fail-no-op --insecure-tls=${no_verify_ssl} --limit=1 --flat "test-automation-generic-promoted-local/S_PS_PromoteBuild_0012_1.txt" "dependency.txt"
+            - jfrog rt curl -XDELETE "/api/build/S_PS_PromoteBuild_0012_2?buildNumbers=${JFROG_CLI_BUILD_NUMBER}&artifacts=1"

@@ -1,0 +1,58 @@
+resources:
+  - name: S_PS_PromoteBuild_0004_input
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: s_artifactory
+      buildName: name
+      buildNumber: '1'
+  - name: S_PS_PromoteBuild_0004_output
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: s_artifactory
+      buildName: name
+      buildNumber: '1'
+
+pipelines:
+  - name: pipeline_S_PS_PromoteBuild_0004
+    steps:
+      - name: S_PS_PromoteBuild_0004_1
+        type: PowerShell
+        configuration:
+          nodePool: win_2019
+          integrations:
+            - name: s_artifactory
+          outputResources:
+            - name: S_PS_PromoteBuild_0004_input
+        execution:
+          onExecute:
+            - Set-Content -Path S_PS_PromoteBuild_0004.txt -Value ${run_id}
+            - jfrog rt upload S_PS_PromoteBuild_0004.txt test-automation-generic-local
+            - jfrog rt build-publish ${JFROG_CLI_BUILD_NAME} ${JFROG_CLI_BUILD_NUMBER}
+            - write_output S_PS_PromoteBuild_0004_input buildName=${JFROG_CLI_BUILD_NAME} buildNumber=${JFROG_CLI_BUILD_NUMBER}
+      - name: S_PS_PromoteBuild_0004_2
+        type: PromoteBuild
+        configuration:
+          nodePool: win_2019
+          targetRepository: test-automation-generic-promoted-local
+          status: TEST
+          inputResources:
+            - name: S_PS_PromoteBuild_0004_input
+          outputResources:
+            - name: S_PS_PromoteBuild_0004_output
+      - name: S_PS_PromoteBuild_0004_3
+        type: PowerShell
+        configuration:
+          nodePool: win_2019
+          integrations:
+            - name: s_artifactory
+          inputResources:
+            - name: S_PS_PromoteBuild_0004_output
+        execution:
+          onExecute:
+            - if ("$res_S_PS_PromoteBuild_0004_output_buildName" -ne "${JFROG_CLI_BUILD_NAME}") { throw("failed") }
+            - if ("$res_S_PS_PromoteBuild_0004_output_buildNumber" -ne "${JFROG_CLI_BUILD_NUMBER}") { throw("failed") }
+            - jfrog rt curl -XGET "/api/build/${JFROG_CLI_BUILD_NAME}/${JFROG_CLI_BUILD_NUMBER}" -o ${step_tmp_dir}\response
+            - jfrog rt curl -XDELETE "/api/build/${JFROG_CLI_BUILD_NAME}?buildNumbers=${JFROG_CLI_BUILD_NUMBER}&artifacts=1"
+            - Get-Content ${step_tmp_dir}\response
+            - $myStatus = $(Get-Content ${step_tmp_dir}\response | ConvertFrom-Json).buildInfo.statuses[0].status; add_run_variables myStatus=$myStatus
+            - if ("$myStatus" -ne "TEST") { throw("failed") }

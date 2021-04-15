@@ -1,0 +1,54 @@
+resources:
+  - name: S_PS_PromoteBuild_0008_input
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: s_artifactory
+      buildName: name
+      buildNumber: '1'
+  - name: S_PS_PromoteBuild_0008_output
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: s_artifactory
+      buildName: name
+      buildNumber: '1'
+
+pipelines:
+  - name: pipeline_S_PS_PromoteBuild_0008
+    steps:
+      - name: S_PS_PromoteBuild_0008_1
+        type: PowerShell
+        configuration:
+          nodePool: win_2019
+          integrations:
+            - name: s_artifactory
+          outputResources:
+            - name: S_PS_PromoteBuild_0008_input
+        execution:
+          onExecute:
+            - Set-Content -Path S_PS_PromoteBuild_0008.txt -Value ${run_id}
+            - jfrog rt upload S_PS_PromoteBuild_0008.txt test-automation-generic-local
+            - jfrog rt build-publish ${JFROG_CLI_BUILD_NAME} ${JFROG_CLI_BUILD_NUMBER}
+            - write_output S_PS_PromoteBuild_0008_input buildName=${JFROG_CLI_BUILD_NAME} buildNumber=${JFROG_CLI_BUILD_NUMBER}
+      - name: S_PS_PromoteBuild_0008_2
+        type: PromoteBuild
+        configuration:
+          nodePool: win_2019
+          targetRepository: test-automation-generic-promoted-local
+          copy: true
+          inputResources:
+            - name: S_PS_PromoteBuild_0008_input
+          outputResources:
+            - name: S_PS_PromoteBuild_0008_output
+      - name: S_PS_PromoteBuild_0008_3
+        type: PowerShell
+        configuration:
+          nodePool: win_2019
+          integrations:
+            - name: s_artifactory
+          inputResources:
+            - name: S_PS_PromoteBuild_0008_output
+        execution:
+          onExecute:
+            - jfrog rt download --fail-no-op --insecure-tls=${no_verify_ssl} --limit=1 --flat "test-automation-generic-promoted-local/S_PS_PromoteBuild_0008.txt" "promoted.txt"
+            - jfrog rt download --fail-no-op --insecure-tls=${no_verify_ssl} --limit=1 --flat "test-automation-generic-local/S_PS_PromoteBuild_0008.txt" "original.txt"
+            - jfrog rt curl -XDELETE "/api/build/${JFROG_CLI_BUILD_NAME}?buildNumbers=${JFROG_CLI_BUILD_NUMBER}&artifacts=1"

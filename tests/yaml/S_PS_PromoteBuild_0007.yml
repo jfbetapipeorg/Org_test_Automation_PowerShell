@@ -1,0 +1,57 @@
+resources:
+  - name: S_PS_PromoteBuild_0007_input
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: s_artifactory
+      buildName: name
+      buildNumber: '1'
+  - name: S_PS_PromoteBuild_0007_output
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: s_artifactory
+      buildName: name
+      buildNumber: '1'
+
+pipelines:
+  - name: pipeline_S_PS_PromoteBuild_0007
+    steps:
+      - name: S_PS_PromoteBuild_0007_1
+        type: PowerShell
+        configuration:
+          nodePool: win_2019
+          integrations:
+            - name: s_artifactory
+          outputResources:
+            - name: S_PS_PromoteBuild_0007_input
+        execution:
+          onExecute:
+            - Set-Content -Path S_PS_PromoteBuild_0007.txt -Value ${run_id}
+            - jfrog rt upload S_PS_PromoteBuild_0007.txt test-automation-generic-local
+            - jfrog rt build-publish ${JFROG_CLI_BUILD_NAME} ${JFROG_CLI_BUILD_NUMBER}
+            - write_output S_PS_PromoteBuild_0007_input buildName=${JFROG_CLI_BUILD_NAME} buildNumber=${JFROG_CLI_BUILD_NUMBER}
+      - name: S_PS_PromoteBuild_0007_2
+        type: PromoteBuild
+        configuration:
+          nodePool: win_2019
+          targetRepository: test-automation-generic-promoted-local
+          status: TEST
+          comment: "My test comment for ${run_id}"
+          inputResources:
+            - name: S_PS_PromoteBuild_0007_input
+          outputResources:
+            - name: S_PS_PromoteBuild_0007_output
+      - name: S_PS_PromoteBuild_0007_3
+        type: PowerShell
+        configuration:
+          nodePool: win_2019
+          integrations:
+            - name: s_artifactory
+          inputResources:
+            - name: S_PS_PromoteBuild_0007_output
+        execution:
+          onExecute:
+            - jfrog rt curl -XGET "/api/build/${JFROG_CLI_BUILD_NAME}/${JFROG_CLI_BUILD_NUMBER}" -o ${step_tmp_dir}\response
+            - jfrog rt curl -XDELETE "/api/build/${JFROG_CLI_BUILD_NAME}?buildNumbers=${JFROG_CLI_BUILD_NUMBER}&artifacts=1"
+            - Get-Content ${step_tmp_dir}\response
+            - $myComment = $(Get-Content ${step_tmp_dir}\response | ConvertFrom-Json).buildInfo.statuses[0].comment; add_run_variables myComment=$myComment
+            - if ("$myComment" -ne "My test comment for ${run_id}") { throw("failed") }
