@@ -42,7 +42,7 @@ pipelines:
           onExecute:
             - jfrog --version
             - $json = @{key="simplecharts";rclass="local";packageType="helm";description="This repo is a test repo used by test automation";repoLayoutRef="simple-default"} | ConvertTo-Json -Compress  | Out-File c:\myrequest.json -Encoding Ascii -Force
-            - $ErrorActionPreference = "SilentlyContinue"; try { jfrog rt repo-delete simplecharts } catch { Write-Output "Step Catch";  $global:LASTEXITCODE = 0 }
+            - try { jfrog rt repo-delete simplecharts; $global:LASTEXITCODE = 0 } catch { Write-Output "Step Catch";  $global:LASTEXITCODE = 0 }
             - jfrog rt repo-create c:\myrequest.json
             - jfrog rt u $res_S_PS_HBGDeploy_5978_0001_git_resource_resourcePath/tests/core/helmdeploy/simplehelm-0.3.0.tgz "simplecharts/"
             - jfrog rt u $res_S_PS_HBGDeploy_5978_0001_git_resource_resourcePath/tests/core/helmdeploy/index.yaml "simplecharts/"
