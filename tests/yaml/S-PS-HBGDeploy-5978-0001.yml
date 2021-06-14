@@ -42,7 +42,7 @@ pipelines:
           onExecute:
             - jfrog --version
             - $json = @{key="simplecharts";rclass="local";packageType="helm";description="This repo is a test repo used by test automation";repoLayoutRef="simple-default"} | ConvertTo-Json -Compress  | Out-File c:\myrequest.json -Encoding Ascii -Force
-            - jfrog rt repo-delete simplecharts --quiet | Out-Null
+            - $ErrorActionPreference = "SilentlyContinue"; jfrog rt repo-delete simplecharts --quiet
             - jfrog rt repo-create c:\myrequest.json
             - jfrog rt u $res_S_PS_HBGDeploy_5978_0001_git_resource_resourcePath/tests/core/helmdeploy/simplehelm-0.3.0.tgz "simplecharts/"
             - jfrog rt u $res_S_PS_HBGDeploy_5978_0001_git_resource_resourcePath/tests/core/helmdeploy/index.yaml "simplecharts/"
@@ -71,6 +71,6 @@ pipelines:
             - helm3 status ${blue_release_name}
             - kubectl get service ${idle_name}
           onComplete:
-            - jfrog rt repo-delete simplecharts --quiet | Out-Null
-            - helm3 delete ${blue_release_name} --namespace ${k8s_namespace} | Out-Null
-            - kubectl delete service ${idle_name} --namespace ${k8s_namespace} | Out-Null
+            - $ErrorActionPreference = "SilentlyContinue"; jfrog rt repo-delete simplecharts --quiet
+            - $ErrorActionPreference = "SilentlyContinue"; helm3 delete ${blue_release_name} --namespace ${k8s_namespace}
+            - $ErrorActionPreference = "SilentlyContinue"; kubectl delete service ${idle_name} --namespace ${k8s_namespace}
