@@ -43,5 +43,5 @@ pipelines:
             - helm3 status ${blue_release_name}-${run_id}
             - kubectl get service ${idle_name}-${run_id}
           onComplete:
-            - helm3 delete ${blue_release_name} --namespace ${k8s_namespace}; $global:LASTEXITCODE = 0
-            - kubectl delete service ${idle_name} --namespace ${k8s_namespace}; $global:LASTEXITCODE = 0
+            - helm3 delete ${blue_release_name}-${run_id} --namespace ${k8s_namespace}; $global:LASTEXITCODE = 0
+            - kubectl delete service ${idle_name}-${run_id} --namespace ${k8s_namespace}; $global:LASTEXITCODE = 0
