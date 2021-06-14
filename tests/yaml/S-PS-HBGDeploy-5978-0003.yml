@@ -45,7 +45,7 @@ pipelines:
             - jfrog rt repo-create c:\myrequest.json
             - jfrog rt u $res_S_PS_HBGDeploy_5978_0003_git_resource_resourcePath/tests/core/helmdeploy/simplehelm-0.3.0.tgz "simplecharts/"
             - jfrog rt u $res_S_PS_HBGDeploy_5978_0003_git_resource_resourcePath/tests/core/helmdeploy/index.yaml "simplecharts/"
-            onFailure:
+          onFailure:
             - jfrog rt repo-delete simplecharts; $global:LASTEXITCODE = 0
 
       - name: S_PS_HBGDeploy_5978_0003_2
