@@ -24,10 +24,10 @@ pipelines:
       nodePool: win_2019
       environmentVariables:
         readOnly:
-          blue_release_name: "blue-hbgdeploy-ps-1-${run_id}"
-          green_release_name: "green-hbgdeploy-ps-1-${run_id}"
-          idle_name: "idle-hbgdeploy-ps-1-${run_id}"
-          live_name: "live-hbgdeploy-ps-1-${run_id}"
+          blue_release_name: "blue-hbgdeploy-ps-1"
+          green_release_name: "green-hbgdeploy-ps-1"
+          idle_name: "idle-hbgdeploy-ps-1"
+          live_name: "live-hbgdeploy-ps-1"
           k8s_namespace: "pipe-master-pool"
     steps:
       - name: S_PS_HBGDeploy_5978_0001_1
@@ -59,18 +59,18 @@ pipelines:
           inputResources:
             - name: S_PS_HBGDeploy_5978_0001_helm_resource
           namespace: ${k8s_namespace}
-          blueReleaseName: ${blue_release_name}
-          greenReleaseName: ${green_release_name}
+          blueReleaseName: ${blue_release_name}-${run_id}
+          greenReleaseName: ${green_release_name}-${run_id}
           roleServices:
-            - blueReferenceName: ${blue_release_name}-simplehelm
-              greenReferenceName: ${green_release_name}-simplehelm
-              idleName: ${idle_name}
-              liveName: ${live_name}
+            - blueReferenceName: ${blue_release_name}-${run_id}-simplehelm
+              greenReferenceName: ${green_release_name}-${run_id}-simplehelm
+              idleName: ${idle_name}-${run_id}
+              liveName: ${live_name}-${run_id}
         execution:
           onSuccess:
-            - "helm3 status \"${blue_release_name}\""
-            - "kubectl get service \"${idle_name}\""
+            - "helm3 status \"${blue_release_name}-${run_id}\""
+            - "kubectl get service \"${idle_name}-${run_id}\""
           onComplete:
             - jfrog rt repo-delete simplecharts; $global:LASTEXITCODE = 0
-            - "helm3 delete \"${blue_release_name}\" --namespace \"${k8s_namespace}\"; $global:LASTEXITCODE = 0"
-            - "kubectl delete service \"${idle_name}\" --namespace \"${k8s_namespace}\"; $global:LASTEXITCODE = 0"
+            - "helm3 delete \"${blue_release_name}-${run_id}\" --namespace \"${k8s_namespace}\"; $global:LASTEXITCODE = 0"
+            - "kubectl delete service \"${idle_name}-${run_id}\" --namespace \"${k8s_namespace}\"; $global:LASTEXITCODE = 0"
