@@ -42,12 +42,12 @@ pipelines:
           onExecute:
             - jfrog --version
             - $json = @{key="simplecharts";rclass="local";packageType="helm";description="This repo is a test repo used by test automation";repoLayoutRef="simple-default"} | ConvertTo-Json -Compress  | Out-File c:\myrequest.json -Encoding Ascii -Force
-            - jfrog rt repo-delete simplecharts --quiet 2> $null
+            - try { jfrog rt repo-delete simplecharts --quiet } catch {}
             - jfrog rt repo-create c:\myrequest.json
             - jfrog rt u $res_S_PS_HBGDeploy_5978_0001_git_resource_resourcePath/tests/core/helmdeploy/simplehelm-0.3.0.tgz "simplecharts/"
             - jfrog rt u $res_S_PS_HBGDeploy_5978_0001_git_resource_resourcePath/tests/core/helmdeploy/index.yaml "simplecharts/"
           onFailure:
-            - jfrog rt repo-delete simplecharts --quiet
+            - try { jfrog rt repo-delete simplecharts --quiet } catch {}
 
       - name: S_PS_HBGDeploy_5978_0001_2
         type: HelmBlueGreenDeploy
@@ -71,6 +71,6 @@ pipelines:
             - helm3 status ${blue_release_name}
             - kubectl get service ${idle_name}
           onComplete:
-            - jfrog rt repo-delete simplecharts --quiet 2> $null
-            - helm3 delete ${blue_release_name} --namespace ${k8s_namespace} 2> $null
-            - kubectl delete service ${idle_name} --namespace ${k8s_namespace} 2> $null
+            - try { jfrog rt repo-delete simplecharts --quiet } catch {}
+            - try { helm3 delete ${blue_release_name} --namespace ${k8s_namespace} } catch {}
+            - try { kubectl delete service ${idle_name} --namespace ${k8s_namespace} } catch {}
