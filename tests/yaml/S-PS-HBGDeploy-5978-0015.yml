@@ -1,0 +1,52 @@
+template: true
+valuesFilePath: ../values/gitRepoValues.yml
+
+resources:
+  - name: S_PS_HBGDeploy_5978_0015_git_resource
+    type: GitRepo
+    configuration:
+      gitProvider: s_gitHub
+      path: {{ .Values.GitHub.Org_test_Automation.path }}
+      branches:
+        include: master
+
+pipelines:
+  - name: S_PS_HBGDeploy_5978_0015
+    configuration:
+      environmentVariables:
+        readOnly:
+          blue_release_name: "blue-hbgdeploy-ps-15"
+          green_release_name: "green-hbgdeploy-ps-15"
+          idle_name: "idle-hbgdeploy-ps-15"
+          live_name: "live-hbgdeploy-ps-15"
+          k8s_namespace: "pipe-master-pool"
+    steps:
+      - name: S_PS_HBGDeploy_5978_0015_1
+        type: HelmBlueGreenDeploy
+        configuration:
+          integrations:
+            - name: s_kubernetes
+          inputResources:
+            - name: S_PS_HBGDeploy_5978_0015_git_resource
+          chartPath: tests/core/helmbluegreen/simplehelm
+          namespace: ${k8s_namespace}
+          blueReleaseName: ${blue_release_name}-${run_id}
+          blueFlags: "--wait"
+          greenReleaseName: ${green_release_name}-${run_id}
+          greenFlags: "--wait"
+          roleServices:
+            - blueReferenceName: ${blue_release_name}-${run_id}-simplehelm
+              greenReferenceName: ${green_release_name}-${run_id}-simplehelm
+              idleName: ${idle_name}-${run_id}
+              liveName: ${live_name}-${run_id}
+          lint: true
+          test: true
+        execution:
+          onSuccess:
+            - helm3 status ${blue_release_name}-${run_id}
+            - kubectl get service ${idle_name}-${run_id}
+            - kubectl get pod ${blue_release_name}-${run_id}-simplehelm-test-connection
+          onComplete:
+            - helm3 delete ${blue_release_name}-${run_id} --namespace ${k8s_namespace}; $global:LASTEXITCODE = 0
+            - kubectl delete service ${idle_name}-${run_id} --namespace ${k8s_namespace}; $global:LASTEXITCODE = 0
+            - kubectl delete pod ${blue_release_name}-${run_id}-simplehelm-test-connection --namespace ${k8s_namespace}; $global:LASTEXITCODE = 0
