@@ -31,7 +31,7 @@ pipelines:
           k8s_namespace: "pipe-master-pool"
     steps:
       - name: S_PS_HBGDeploy_5978_0001_1
-        type: Bash
+        type: PowerShell
         configuration:
           integrations:
             - name: s_artifactory
