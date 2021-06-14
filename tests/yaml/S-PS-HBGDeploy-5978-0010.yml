@@ -1,0 +1,53 @@
+template: true
+valuesFilePath: ../values/gitRepoValues.yml
+
+resources:
+  - name: S_PS_HBGDeploy_5978_0010_git_resource
+    type: GitRepo
+    configuration:
+      gitProvider: s_gitHub
+      path: {{ .Values.GitHub.Org_test_Automation.path }}
+      branches:
+        include: master
+
+pipelines:
+  - name: S_PS_HBGDeploy_5978_0010
+    configuration:
+      environmentVariables:
+        readOnly:
+          blue_release_name: "blue-hbgdeploy-ps-10"
+          green_release_name: "green-hbgdeploy-ps-10"
+          idle_name: "idle-hbgdeploy-ps-10"
+          live_name: "live-hbgdeploy-ps-10"
+          k8s_namespace: "pipe-master-pool"
+    steps:
+      - name: S_PS_HBGDeploy_5978_0010_1
+        type: HelmBlueGreenDeploy
+        configuration:
+          integrations:
+            - name: s_kubernetes
+          inputResources:
+            - name: S_PS_HBGDeploy_5978_0010_git_resource
+          helmVersion: 2
+          chartPath: tests/core/helmbluegreen/simplehelm
+          namespace: ${k8s_namespace}
+          blueReleaseName: ${blue_release_name}-${run_id}
+          greenReleaseName: ${green_release_name}-${run_id}
+          roleServices:
+            - blueReferenceName: ${blue_release_name}-${run_id}-simplehelm
+              greenReferenceName: ${green_release_name}-${run_id}-simplehelm
+              idleName: ${idle_name}-${run_id}
+              liveName: ${live_name}-${run_id}
+        execution:
+          onStart:
+            - helm init --client-only --stable-repo-url https://charts.helm.sh/stable
+            - helm plugin install https://github.com/rimusz/helm-tiller
+            - helm tiller start-ci ${k8s_namespace}
+            - $HELM_HOST = 127.0.0.1:44134
+          onSuccess:
+            - helm status ${blue_release_name}-${run_id}
+            - kubectl get service ${idle_name}-${run_id}
+          onComplete:
+            - helm delete ${blue_release_name}-${run_id}; $global:LASTEXITCODE = 0
+            - kubectl delete service ${idle_name}-${run_id} --namespace ${k8s_namespace}; $global:LASTEXITCODE = 0
+            - helm tiller stop; $global:LASTEXITCODE = 0

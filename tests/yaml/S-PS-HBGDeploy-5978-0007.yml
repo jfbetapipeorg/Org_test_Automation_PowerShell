@@ -1,0 +1,95 @@
+template: true
+valuesFilePath: ../values/gitRepoValues.yml
+
+resources:
+  - name: S_PS_HBGDeploy_5978_0007_git_resource
+    type: GitRepo
+    configuration:
+      gitProvider: s_gitHub
+      path: {{ .Values.GitHub.Org_test_Automation.path }}
+      branches:
+        include: master
+
+pipelines:
+  - name: S_PS_HBGDeploy_5978_0007
+    configuration:
+      environmentVariables:
+        readOnly:
+          blue_release_name: "blue-hbgdeploy-ps-7"
+          green_release_name: "green-hbgdeploy-ps-7"
+          idle_name: "idle-hbgdeploy-ps-7"
+          live_name: "live-hbgdeploy-ps-7"
+          k8s_namespace: "pipe-master-pool"
+    steps:
+      - name: S_PS_HBGDeploy_5978_0007_1
+        type: HelmBlueGreenDeploy
+        configuration:
+          integrations:
+            - name: s_kubernetes
+          inputResources:
+            - name: S_PS_HBGDeploy_5978_0007_git_resource
+          chartPath: tests/core/helmbluegreen/simplehelm
+          namespace: ${k8s_namespace}
+          blueReleaseName: ${blue_release_name}-${run_id}
+          greenReleaseName: ${green_release_name}-${run_id}
+          roleServices:
+            - blueReferenceName: ${blue_release_name}-${run_id}-simplehelm
+              greenReferenceName: ${green_release_name}-${run_id}-simplehelm
+              idleName: ${idle_name}-${run_id}
+              liveName: ${live_name}-${run_id}
+        execution:
+          onSuccess:
+            - helm3 status ${blue_release_name}-${run_id}
+            - kubectl get service ${idle_name}-${run_id}
+          onFailure:
+            - helm3 delete ${blue_release_name}-${run_id} --namespace ${k8s_namespace}; $global:LASTEXITCODE = 0
+            - helm3 delete ${green_release_name}-${run_id} --namespace ${k8s_namespace}; $global:LASTEXITCODE = 0
+            - kubectl delete service ${idle_name}-${run_id} --namespace ${k8s_namespace}; $global:LASTEXITCODE = 0
+            - kubectl delete service ${live_name}-${run_id} --namespace ${k8s_namespace}; $global:LASTEXITCODE = 0
+
+      - name: S_PS_HBGDeploy_5978_0007_2
+        type: HelmBlueGreenRoleSwitch
+        configuration:
+          inputSteps:
+            - name: S_PS_HBGDeploy_5978_0007_1
+          integrations:
+            - name: s_kubernetes
+          deployStep: S_PS_HBGDeploy_5978_0007_1
+        execution:
+          onSuccess:
+            - kubectl get service ${live_name}-${run_id}
+          onFailure:
+            - helm3 delete ${blue_release_name}-${run_id} --namespace ${k8s_namespace}; $global:LASTEXITCODE = 0
+            - helm3 delete ${green_release_name}-${run_id} --namespace ${k8s_namespace}; $global:LASTEXITCODE = 0
+            - kubectl delete service ${idle_name}-${run_id} --namespace ${k8s_namespace}; $global:LASTEXITCODE = 0
+            - kubectl delete service ${live_name}-${run_id} --namespace ${k8s_namespace}; $global:LASTEXITCODE = 0
+
+      - name: S_PS_HBGDeploy_5978_0007_3
+        type: HelmBlueGreenDeploy
+        configuration:
+          inputSteps:
+            - name: S_PS_HBGDeploy_5978_0007_2
+          integrations:
+            - name: s_kubernetes
+          inputResources:
+            - name: S_PS_HBGDeploy_5978_0007_git_resource
+          chartPath: tests/core/helmbluegreen/simplehelm
+          namespace: ${k8s_namespace}
+          blueReleaseName: ${blue_release_name}-${run_id}
+          greenReleaseName: ${green_release_name}-${run_id}
+          roleServices:
+            - blueReferenceName: ${blue_release_name}-${run_id}-simplehelm
+              greenReferenceName: ${green_release_name}-${run_id}-simplehelm
+              idleName: ${idle_name}-${run_id}
+              liveName: ${live_name}-${run_id}
+        execution:
+          onSuccess:
+            - helm3 status ${blue_release_name}-${run_id}
+            - helm3 status ${green_release_name}-${run_id}
+            - kubectl get service ${idle_name}-${run_id}
+            - kubectl get service ${live_name}-${run_id}
+          onComplete:
+            - helm3 delete ${blue_release_name}-${run_id} --namespace ${k8s_namespace}; $global:LASTEXITCODE = 0
+            - helm3 delete ${green_release_name}-${run_id} --namespace ${k8s_namespace}; $global:LASTEXITCODE = 0
+            - kubectl delete service ${idle_name}-${run_id} --namespace ${k8s_namespace}; $global:LASTEXITCODE = 0
+            - kubectl delete service ${live_name}-${run_id} --namespace ${k8s_namespace}; $global:LASTEXITCODE = 0
