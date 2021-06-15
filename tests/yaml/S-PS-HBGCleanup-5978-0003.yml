@@ -13,6 +13,7 @@ resources:
 pipelines:
   - name: S_PS_HBGCleanup_5978_0003
     configuration:
+      nodePool: win_2019
       environmentVariables:
         readOnly:
           blue_release_name: "blue-hbgcleanup-ps-3"
