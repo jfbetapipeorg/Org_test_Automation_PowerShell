@@ -60,6 +60,7 @@ pipelines:
           onSuccess:
             - kubectl get service ${live_name}-${run_id}
           onFailure:
+            - "Set-Alias -Name helm3 -Value \"$env:HELM3_PATH\" -Scope Global"
             - helm3 delete ${blue_release_name}-${run_id} --namespace ${k8s_namespace}; $global:LASTEXITCODE = 0
             - helm3 delete ${green_release_name}-${run_id} --namespace ${k8s_namespace}; $global:LASTEXITCODE = 0
             - kubectl delete service ${idle_name}-${run_id} --namespace ${k8s_namespace}; $global:LASTEXITCODE = 0
@@ -105,6 +106,7 @@ pipelines:
           deployStep: S_PS_HBGRoleSwitch_5978_0002_1
         execution:
           onSuccess:
+            - "Set-Alias -Name helm3 -Value \"$env:HELM3_PATH\" -Scope Global"
             - helm3 status ${blue_release_name}-${run_id}
             - helm3 status ${green_release_name}-${run_id}
             - kubectl get service ${idle_name}-${run_id}

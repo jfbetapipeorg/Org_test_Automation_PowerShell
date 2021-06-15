@@ -60,6 +60,7 @@ pipelines:
           onSuccess:
             - kubectl get service ${live_name}-${run_id}
           onFailure:
+            - "Set-Alias -Name helm3 -Value \"$env:HELM3_PATH\" -Scope Global"
             - helm3 delete ${blue_release_name}-${run_id} --namespace ${k8s_namespace}; $global:LASTEXITCODE = 0
             - helm3 delete ${green_release_name}-${run_id} --namespace ${k8s_namespace}; $global:LASTEXITCODE = 0
             - kubectl delete service ${idle_name}-${run_id} --namespace ${k8s_namespace}; $global:LASTEXITCODE = 0
