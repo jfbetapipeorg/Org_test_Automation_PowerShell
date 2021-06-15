@@ -13,6 +13,7 @@ resources:
 pipelines:
   - name: S_PS_HBGDeploy_5978_0008
     configuration:
+      nodePool: win_2019
       environmentVariables:
         readOnly:
           blue_release_name: "blue-hbgdeploy-ps-8"
