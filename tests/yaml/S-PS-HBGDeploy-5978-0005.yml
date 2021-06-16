@@ -97,6 +97,9 @@ pipelines:
               idleName: ${idle_name}-${run_id}
               liveName: ${live_name}-${run_id}
         execution:
+          onSuccess:
+            - helm3 status ${blue_release_name}-${run_id}
+            - kubectl get service ${idle_name}-${run_id}
           onComplete:
             - Write-Output "Deleting distribution..."
             - |
