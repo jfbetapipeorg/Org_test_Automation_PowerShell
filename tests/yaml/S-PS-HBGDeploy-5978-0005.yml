@@ -1,0 +1,126 @@
+template: true
+valuesFilePath: ../values/gitRepoValues.yml
+
+resources:
+  - name: S_PS_HBGDeploy_5978_0005_buildinfo_resource
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: s_artifactory
+      buildName: helmbuild
+      buildNumber: 1
+
+  - name: S_PS_HBGDeploy_5978_0005_git_resource
+    type: GitRepo
+    configuration:
+      gitProvider: s_gitHub
+      path: {{ .Values.GitHub.Org_test_Automation.path }}
+      branches:
+        include: master
+
+  - name: S_PS_HBGDeploy_5978_0005_releasebundle_resource
+    type: ReleaseBundle
+    configuration:
+      sourceDistribution: s_distribution
+      name: name
+      version: '1'
+
+pipelines:
+  - name: S_PS_HBGDeploy_5978_0005
+    configuration:
+      nodePool: win_2019
+      environmentVariables:
+        readOnly:
+          blue_release_name: "blue-hbgdeploy-ps-5"
+          green_release_name: "green-hbgdeploy-ps-5"
+          idle_name: "idle-hbgdeploy-ps-5"
+          live_name: "live-hbgdeploy-ps-5"
+          k8s_namespace: "pipe-master-pool"
+          JFROG_CLI_BUILD_NAME: hbgdeploy-5
+    steps:
+      - name: S_PS_HBGDeploy_5978_0005_1
+        type: PowerShell
+        configuration:
+          integrations:
+            - name: s_artifactory
+          inputResources:
+            - name: S_PS_HBGDeploy_5978_0005_git_resource
+          outputResources:
+            - name: S_PS_HBGDeploy_5978_0005_buildinfo_resource
+        execution:
+          onExecute:
+            - jfrog --version
+            - $json = @{key="simplecharts";rclass="local";packageType="helm";description="This repo is a test repo used by test automation";repoLayoutRef="simple-default"} | ConvertTo-Json -Compress  | Out-File c:\myrequest.json -Encoding Ascii -Force
+            - jfrog rt repo-delete simplecharts; $global:LASTEXITCODE = 0
+            - jfrog rt repo-create c:\myrequest.json
+            - cd $res_S_PS_HBGDeploy_5978_0005_git_resource_resourcePath/tests/core/helmbluegreen
+            - jfrog rt u simplehelm-0.3.0.tgz "simplecharts/" --build-name=$JFROG_CLI_BUILD_NAME --build-number=$run_id
+            - jfrog rt bce $JFROG_CLI_BUILD_NAME $run_id
+            - jfrog rt bp $JFROG_CLI_BUILD_NAME $run_id
+            - write_output S_PS_HBGDeploy_5978_0005_buildinfo_resource buildName=$JFROG_CLI_BUILD_NAME buildNumber=$run_id
+          onFailure:
+            - jfrog rt repo-delete simplecharts --quiet
+
+      - name: S_PS_HBGDeploy_5978_0005_2
+        type: CreateReleaseBundle
+        configuration:
+          integrations:
+            - name: s_artifactory
+          releaseBundleName: S_PS_HBGDeploy_5978_0005_buildinfo_resource_bundle
+          releaseBundleVersion: ${run_id}
+          dryRun: false
+          sign: true
+          inputResources:
+            - name: S_PS_HBGDeploy_5978_0005_buildinfo_resource
+          outputResources:
+            - name: S_PS_HBGDeploy_5978_0005_releasebundle_resource
+        execution:
+          onFailure:
+            - jfrog rt repo-delete simplecharts --quiet
+
+      - name: S_PS_HBGDeploy_5978_0005_3
+        type: HelmBlueGreenDeploy
+        configuration:
+          integrations:
+            - name: s_artifactory
+            - name: s_kubernetes
+          inputResources:
+            - name: S_PS_HBGDeploy_5978_0005_releasebundle_resource
+          chartPath: simplecharts
+          chartName: simplehelm
+          chartVersion: 0.3.0
+          namespace: ${k8s_namespace}
+          blueReleaseName: ${blue_release_name}-${run_id}
+          greenReleaseName: ${green_release_name}-${run_id}
+          roleServices:
+            - blueReferenceName: ${blue_release_name}-${run_id}-simplehelm
+              greenReferenceName: ${green_release_name}-${run_id}-simplehelm
+              idleName: ${idle_name}-${run_id}
+              liveName: ${live_name}-${run_id}
+        execution:
+          onComplete:
+            - Write-Output "Deleting distribution..."
+            - |
+              $distributionUrl = $res_S_PS_HBGDeploy_5978_0005_releasebundle_resource_sourceDistribution_url
+              $encoded_auth = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes("${res_S_PS_HBGDeploy_5978_0005_releasebundle_resource_sourceDistribution_user}:${res_S_PS_HBGDeploy_5978_0005_releasebundle_resource_sourceDistribution_apikey}"))
+              $releaseBundleName = (find_resource_variable "S_PS_HBGDeploy_5978_0005_releasebundle_resource" name)
+              $releaseBundleVersion = (find_resource_variable "S_PS_HBGDeploy_5978_0005_releasebundle_resource" version)
+              Write-Output "releaseBundleName = $releaseBundleName"
+              Write-Output "releaseBundleVersion = $releaseBundleVersion"
+              check_no_verify_ssl
+              $headers = @{'Authorization' = "Basic $encoded_auth"}
+              $Response = Invoke-WebRequest "${distributionUrl}/api/v1/release_bundle/$releaseBundleName/$releaseBundleVersion" -Method Delete -Headers $headers -TimeoutSec 60 -UseBasicParsing -OutFile "${step_tmp_dir}\response" -PassThru
+              $statusCode = ""
+              try {
+                $statusCode = $Response.StatusCode
+              }
+              catch {
+                $statusCode = $_.Exception.Response.StatusCode.value__
+              }
+              if ($statusCode -eq 204) {
+                Write-Output "Deleted release bundle ${releaseBundleName}/${releaseBundleVersion} successfully"
+              } else {
+                Write-Output "Distribution returned $statusCode"
+              }
+            - jfrog rt repo-delete simplecharts; $global:LASTEXITCODE = 0
+            - helm3 delete ${blue_release_name}-${run_id} --namespace ${k8s_namespace}; $global:LASTEXITCODE = 0
+            - kubectl delete service ${idle_name}-${run_id} --namespace ${k8s_namespace}; $global:LASTEXITCODE = 0
