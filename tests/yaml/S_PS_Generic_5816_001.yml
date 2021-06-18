@@ -1,0 +1,24 @@
+pipelines:
+  - name: S_PS_Generic_5816_001
+    steps:
+      - name: S_PS_Generic_5816_001_1
+        type: PowerShell
+        configuration:
+          nodePool: win_2019
+          affinityGroup: S_PS_Generic_5816_001_group
+        execution:
+          onExecute:
+            - Write-Output "$shared_workspace"
+            - if ( "$shared_workspace" -eq "") { throw "Missing shared_workspace variable" }
+            - Set-Content -Path ${shared_workspace}\S_PS_Generic_5816_001.txt -Value ${run_id}
+
+      - name: S_PS_Generic_5816_001_2
+        type: PowerShell
+        configuration:
+          nodePool: win_2019
+          affinityGroup: S_PS_Generic_5816_001_group
+          inputSteps:
+            - name: S_PS_Generic_5816_001_1
+        execution:
+          onExecute:
+            - if ( (type ${shared_workspace}\S_PS_Generic_5816_001.txt) -ne "$run_id" ) { throw "Wrong file contents" }
