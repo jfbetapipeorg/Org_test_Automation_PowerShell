@@ -52,11 +52,11 @@ pipelines:
             - $buildInfoFileData = jfrog rt curl -XGET /api/storage/${buildInfoFilePath} | ConvertFrom-Json
             - $artifactSha = $buildInfoFileData.checksums.sha256
             - >
-            if ( "${project_key}" -eq "") {
-              $project = "default"
-            } else {
-              $project = "${project_key}"
-            }
+              if ( "${project_key}" -eq "") {
+                $project = "default"
+              } else {
+                $project = "${project_key}"
+              }
             - $artifactPath = "${project}/${JFROG_CLI_BUILD_NAME}/${run_id}"
 
             - $headers = @{}
@@ -67,6 +67,6 @@ pipelines:
             - $stepArtifact = type ${step_tmp_dir}\${step_name}_stepArtifact.json | ConvertFrom-Json
             - $stepArtifactSha = $stepArtifact.artifactSha
             - >
-            if ("$stepArtifactSha" -ne "$artifactSha") {
-              return 1
-            }
+              if ("$stepArtifactSha" -ne "$artifactSha") {
+                return 1
+              }
