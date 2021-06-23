@@ -61,7 +61,7 @@ pipelines:
 
             - $headers = @{}
             - $headers['Authorization'] = "apiToken $builder_api_token"
-            - "Invoke-WebRequest \"${pipelines_api_url}/stepArtifacts?artifactPath=${artifactPath}&artifactSha=${artifactSha}&artifactType=buildInfo\" -Method Post -Headers `$headers -TimeoutSec 60 -ContentType 'application/json' -UseBasicParsing -OutFile \"${step_tmp_dir}\${step_name}_stepArtifact.json\""
+            - "Invoke-WebRequest \"${pipelines_api_url}/stepArtifacts?artifactPath=${artifactPath}&artifactSha=${artifactSha}&artifactType=buildInfo\" -Method Post -Headers `$headers -TimeoutSec 60 -ContentType 'application/json' -UseBasicParsing -OutFile \"${step_tmp_dir}${step_name}_stepArtifact.json\""
 
             - jfrog rt curl -XDELETE "/api/build/${JFROG_CLI_BUILD_NAME}?buildNumbers=${run_id}&artifacts=1"
             - $stepArtifact = type ${step_tmp_dir}\${step_name}_stepArtifact.json | ConvertFrom-Json
