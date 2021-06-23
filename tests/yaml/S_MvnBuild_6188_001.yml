@@ -47,31 +47,28 @@ pipelines:
             - name: s_artifactory
         execution:
           onExecute:
-            - $script:buildInfoFilePath = jfrog rt search "*/${JFROG_CLI_BUILD_NAME}/${run_id}*.json" | jq -r ".[0].path"
-            - Write-Output $script:buildInfoFilePath
-
             - $script:buildInfo = jfrog rt search "*/${JFROG_CLI_BUILD_NAME}/${run_id}*.json" | ConvertFrom-Json
             - Write-Output $script:buildInfo
             - $script:buildInfoFilePath = $script:buildInfo[0].path
             - Write-Output $script:buildInfoFilePath
-            - $buildInfoFileData = jfrog rt curl -XGET /api/storage/${buildInfoFilePath} | ConvertFrom-Json
-            - $artifactSha = $buildInfoFileData.checksums.sha256
+            - $script:buildInfoFileData = jfrog rt curl -XGET /api/storage/$script:buildInfoFilePath | ConvertFrom-Json
+            - $script:artifactSha = $script:buildInfoFileData.checksums.sha256
             - >
               if ( "${project_key}" -eq "") {
-                $project = "default"
+                $script:project = "default"
               } else {
-                $project = "${project_key}"
+                $script:project = "${project_key}"
               }
-            - $artifactPath = "${project}/${JFROG_CLI_BUILD_NAME}/${run_id}"
+            - $script:artifactPath = "$script:project/${JFROG_CLI_BUILD_NAME}/${run_id}"
 
-            - $headers = @{}
-            - $headers['Authorization'] = "apiToken $builder_api_token"
-            - "Invoke-WebRequest \"${pipelines_api_url}/stepArtifacts?artifactPath=${artifactPath}&artifactSha=${artifactSha}&artifactType=buildInfo\" -Method Post -Headers `$headers -TimeoutSec 60 -ContentType 'application/json' -UseBasicParsing -OutFile \"${step_tmp_dir}${step_name}_stepArtifact.json\""
+            - $script:headers = @{}
+            - $script:headers['Authorization'] = "apiToken $builder_api_token"
+            - "Invoke-WebRequest \"${pipelines_api_url}/stepArtifacts?artifactPath=$script:artifactPath&artifactSha=$script:artifactSha&artifactType=buildInfo\" -Method Post -Headers `$script:headers -TimeoutSec 60 -ContentType 'application/json' -UseBasicParsing -OutFile \"${step_tmp_dir}${step_name}_stepArtifact.json\""
 
             - jfrog rt curl -XDELETE "/api/build/${JFROG_CLI_BUILD_NAME}?buildNumbers=${run_id}&artifacts=1"
-            - $stepArtifact = type ${step_tmp_dir}\${step_name}_stepArtifact.json | ConvertFrom-Json
-            - $stepArtifactSha = $stepArtifact.artifactSha
+            - $script:stepArtifact = type ${step_tmp_dir}\${step_name}_stepArtifact.json | ConvertFrom-Json
+            - $script:stepArtifactSha = $script:stepArtifact.artifactSha
             - >
-              if ("$stepArtifactSha" -ne "$artifactSha") {
+              if ("$script:stepArtifactSha" -ne "$script:artifactSha") {
                 return 1
               }
