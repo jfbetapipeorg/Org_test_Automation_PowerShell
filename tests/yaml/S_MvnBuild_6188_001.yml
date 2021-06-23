@@ -54,7 +54,7 @@ pipelines:
             - $script:buildInfoFileData = jfrog rt curl -XGET /api/storage/$script:buildInfoFilePath | ConvertFrom-Json
             - $script:artifactSha = $script:buildInfoFileData.checksums.sha256
             - Write-Output $script:artifactSha
-            - >
+            - |
               if ( "${project_key}" -eq "") {
                 $script:project = "default"
               } else {
@@ -62,7 +62,7 @@ pipelines:
               }
             - $script:artifactPath = "$script:project/${JFROG_CLI_BUILD_NAME}/${run_id}"
             - Write-Output $script:artifactPath
-            - >
+            - |
               $script:headers = @{}
               $script:headers['Authorization'] = "apiToken $builder_api_token"
             - Write-Output $script:headers
@@ -77,7 +77,7 @@ pipelines:
             - Write-Output $script:stepArtifact
             - $script:stepArtifactSha = $script:stepArtifact.artifactSha
             - Write-Output $script:stepArtifactSha
-            - >
+            - |
               if ("$script:stepArtifactSha" -ne "$script:artifactSha") {
                 return 1
               }
