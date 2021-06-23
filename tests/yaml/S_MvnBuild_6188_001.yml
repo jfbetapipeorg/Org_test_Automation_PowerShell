@@ -62,9 +62,9 @@ pipelines:
               }
             - $script:artifactPath = "$script:project/${JFROG_CLI_BUILD_NAME}/${run_id}"
             - Write-Output $script:artifactPath
-
-            - $script:headers = @{}
-            - $script:headers['Authorization'] = "apiToken $builder_api_token"
+            - >
+              $script:headers = @{}
+              $script:headers['Authorization'] = "apiToken $builder_api_token"
             - Write-Output $script:headers
             - $script:stepArtifactResponsePath = Join-Path "${step_tmp_dir}" "${step_name}_stepArtifact.json"
             - Write-Output $script:stepArtifactResponsePath
@@ -72,7 +72,6 @@ pipelines:
             - Write-Output $script:stepArtifactUrl
             - Invoke-WebRequest "$script:stepArtifactUrl" -Headers $script:headers -TimeoutSec 60 -ContentType "application/json" -UseBasicParsing -OutFile "$script:stepArtifactResponsePath"
             - type $script:stepArtifactResponsePath
-
             - jfrog rt curl -XDELETE "/api/build/${JFROG_CLI_BUILD_NAME}?buildNumbers=${run_id}&artifacts=1"
             - $script:stepArtifact = type $script:stepArtifactResponsePath | ConvertFrom-Json
             - Write-Output $script:stepArtifact
