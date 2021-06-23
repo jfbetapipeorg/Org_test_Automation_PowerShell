@@ -47,8 +47,13 @@ pipelines:
             - name: s_artifactory
         execution:
           onExecute:
+            - $buildInfoFilePath = jfrog rt search "*/${JFROG_CLI_BUILD_NAME}/${run_id}*.json" | jq -r ".[0].path"
+            - Write-Output $buildInfoFilePath
+
             - $buildInfo = jfrog rt search "*/${JFROG_CLI_BUILD_NAME}/${run_id}*.json" | ConvertFrom-Json
+            - Write-Output $buildInfo
             - $buildInfoFilePath = $buildInfo[0].path
+            - Write-Output $buildInfoFilePath
             - $buildInfoFileData = jfrog rt curl -XGET /api/storage/${buildInfoFilePath} | ConvertFrom-Json
             - $artifactSha = $buildInfoFileData.checksums.sha256
             - >
