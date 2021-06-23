@@ -53,6 +53,7 @@ pipelines:
             - Write-Output $script:buildInfoFilePath
             - $script:buildInfoFileData = jfrog rt curl -XGET /api/storage/$script:buildInfoFilePath | ConvertFrom-Json
             - $script:artifactSha = $script:buildInfoFileData.checksums.sha256
+            - Write-Output $script:artifactSha
             - >
               if ( "${project_key}" -eq "") {
                 $script:project = "default"
@@ -60,14 +61,19 @@ pipelines:
                 $script:project = "${project_key}"
               }
             - $script:artifactPath = "$script:project/${JFROG_CLI_BUILD_NAME}/${run_id}"
+            - Write-Output $script:artifactPath
 
             - $script:headers = @{}
             - $script:headers['Authorization'] = "apiToken $builder_api_token"
-            - "Invoke-WebRequest \"${pipelines_api_url}/stepArtifacts?artifactPath=$script:artifactPath&artifactSha=$script:artifactSha&artifactType=buildInfo\" -Method Post -Headers `$script:headers -TimeoutSec 60 -ContentType 'application/json' -UseBasicParsing -OutFile \"${step_tmp_dir}${step_name}_stepArtifact.json\""
+            - Write-Output $script:headers
+            - "Invoke-WebRequest \"${pipelines_api_url}/stepArtifacts?artifactPath=$script:artifactPath&artifactSha=$script:artifactSha&artifactType=buildInfo\" -Method Post -Headers $script:headers -TimeoutSec 60 -ContentType 'application/json' -UseBasicParsing -OutFile \"${step_tmp_dir}\\${step_name}_stepArtifact.json\""
+            - type ${step_tmp_dir}\\${step_name}_stepArtifact.json
 
             - jfrog rt curl -XDELETE "/api/build/${JFROG_CLI_BUILD_NAME}?buildNumbers=${run_id}&artifacts=1"
-            - $script:stepArtifact = type ${step_tmp_dir}\${step_name}_stepArtifact.json | ConvertFrom-Json
+            - $script:stepArtifact = type ${step_tmp_dir}\\${step_name}_stepArtifact.json | ConvertFrom-Json
+            - Write-Output $script:stepArtifact
             - $script:stepArtifactSha = $script:stepArtifact.artifactSha
+            - Write-Output $script:stepArtifactSha
             - >
               if ("$script:stepArtifactSha" -ne "$script:artifactSha") {
                 return 1
