@@ -18,7 +18,7 @@ resources:
 pipelines:
   - name: pipeline_S_PS_MvnBuild_6188_001
     configuration:
-      nodePool: win_2019
+#      nodePool: win_2019
       environmentVariables:
         readOnly:
           JFROG_CLI_BUILD_NUMBER: ${run_id}
