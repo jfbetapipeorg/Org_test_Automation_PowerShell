@@ -20,7 +20,7 @@ pipelines:
           green_release_name: "green-hbgroleswitch-ps-2"
           idle_name: "idle-hbgroleswitch-ps-2"
           live_name: "live-hbgroleswitch-ps-2"
-          k8s_namespace: "pipe-master-pool"
+          k8s_namespace: {{ .Values.Kubernetes.namespace }}
     steps:
       - name: S_PS_HBGRoleSwitch_5978_0002_1
         type: HelmBlueGreenDeploy

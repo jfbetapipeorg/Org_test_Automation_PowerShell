@@ -27,3 +27,6 @@ BitbucketServer:
     path: PIP/automation
   test_automation:
     path: PIP/test_automation
+
+Kubernetes:
+  namespace: pipe-master-pool

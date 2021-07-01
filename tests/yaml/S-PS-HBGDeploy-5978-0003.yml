@@ -28,7 +28,7 @@ pipelines:
           green_release_name: "green-hbgdeploy-ps-3-${run_id}"
           idle_name: "idle-hbgdeploy-ps-3"
           live_name: "live-hbgdeploy-ps-3"
-          k8s_namespace: "pipe-master-pool"
+          k8s_namespace: {{ .Values.Kubernetes.namespace }}
     steps:
       - name: S_PS_HBGDeploy_5978_0003_1
         type: PowerShell

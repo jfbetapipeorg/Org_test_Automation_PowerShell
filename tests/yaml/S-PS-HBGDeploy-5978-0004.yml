@@ -27,7 +27,7 @@ pipelines:
           green_release_name: "green-hbgdeploy-ps-4"
           idle_name: "idle-hbgdeploy-ps-4"
           live_name: "live-hbgdeploy-ps-4"
-          k8s_namespace: "pipe-master-pool"
+          k8s_namespace: {{ .Values.Kubernetes.namespace }}
           JFROG_CLI_BUILD_NAME: hbgdeploy-4
     steps:
       - name: S_PS_HBGDeploy_5978_0004_1
