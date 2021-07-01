@@ -2,7 +2,6 @@ resources:
   - name: PowerShellLinuxVMDeploy_buildInfo
     type: BuildInfo
     configuration:
-      # TODO: replace with s_artifactory
       sourceArtifactory: s_artifactory
       buildName: PowerShellLinuxVMDeploy_buildInfo
       buildNumber: 42
@@ -10,7 +9,6 @@ resources:
   - name: PowershellLinuxVMDeploy_releaseBundle
     type: ReleaseBundle
     configuration:
-      # TODO: replace s_distribution -> s_distribution
       sourceDistribution: s_distribution
       name: S_PS_LinuxVMDeploy_0006
       version: ${run_id}
@@ -27,10 +25,10 @@ pipelines:
   - name: S_PS_LinuxVMDeploy_0006
     steps:
       - name: S_PS_LinuxVMDeploy_0006_1
-        type: Bash
+        type: PowerShell
         configuration:
+          nodePool: win_2019
           integrations:
-            # TODO: change this to s_artifactory
             - name: s_artifactory
           outputResources:
             - name: PowerShellLinuxVMDeploy_buildInfo
@@ -58,7 +56,6 @@ pipelines:
         configuration:
           nodePool: win_2019
           integrations:
-            # TODO: change this to s_artifactory
             - name: s_artifactory
             - name: s_VM_DEPLOY
           vmEnvironmentVariables:
@@ -70,14 +67,18 @@ pipelines:
           inputResources:
             - name: PowershellVM
             - name: PowershellLinuxVMDeploy_releaseBundle
-          deployCommand: "ls ~/${step_name}/${run_id}/${pipeline_name}/${run_id}/test-automation-generic-local/LinuxVMDeploy_buildInfo.txt || exit 1"
-          postDeployCommand: "ls ~/${step_name}/${run_id}/${pipeline_name}/${run_id}/test-automation-generic-local/LinuxVMDeploy_buildInfo.txt || exit 1"
           sshUser: ubuntu
+          scripts:
+            - name: command1
+              context: "targetCluster"
+              commands:
+                - "ls ~/${step_name}/${run_id}/${pipeline_name}/${run_id}/test-automation-generic-local/LinuxVMDeploy_buildInfo.txt || exit 1"
 
       # Clean up releaseBundle
       - name: S_PS_LinuxVMDeploy_0006_4
-        type: Bash
+        type: PowerShell
         configuration:
+          nodePool: win_2019
           integrations:
             - name: s_distribution
           inputSteps:

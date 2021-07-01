@@ -5,19 +5,24 @@ resources:
       sourceArtifactory: s_artifactory
       pattern: "test-automation-generic-local/PowerShellLinuxVMDeploy_fileSpec.txt"
 
-  - name: myVMError
+  - name: myTargetCluster
     type: VmCluster
     configuration:
       sshKey: s_PS_VM_DEPLOY_SSHKEY
       targets:
         - ${int_s_VM_DEPLOY_VM_ADDRESS_0}
-        - ${int_s_VM_DEPLOY_VM_ADDRESS_ERROR_0}
-        - ${int_s_VM_DEPLOY_VM_ADDRESS_ERROR_1}
+
+  - name: myCurrentCluster
+    type: VmCluster
+    configuration:
+      sshKey: s_PS_VM_DEPLOY_SSHKEY
+      targets:
+        - ${int_s_VM_DEPLOY_VM_ADDRESS_1}
 
 pipelines:
-  - name: S_PS_LinuxVMDeploy_0003
+  - name: S_PS_LinuxVMDeploy_5950_0010
     steps:
-      - name: S_PS_LinuxVMDeploy_0003_1
+      - name: S_PS_LinuxVMDeploy_5950_0010_1
         type: Powershell
         configuration:
           nodePool: win_2019
@@ -29,19 +34,20 @@ pipelines:
           onExecute:
             - echo "File spec ${run_id}" > PowerShellLinuxVMDeploy_fileSpec.txt
             - jfrog rt upload PowerShellLinuxVMDeploy_fileSpec.txt test-automation-generic-local
-      # Check that deploy artifacts are uploaded to non-default dir.
-      - name: S_PS_LinuxVMDeploy_0003_2
+      - name: S_PS_LinuxVMDeploy_5950_0010_2
         type: jfrog_dev/LinuxVMDeploy
         configuration:
           nodePool: win_2019
+          strategy: "blueGreen"
           integrations:
             - name: s_VM_DEPLOY
           inputResources:
-            - name: myVMError
+            - name: myTargetCluster
+            - name: myCurrentCluster
             - name: PowerShellLinuxVMDeploy_fileSpec
           sshUser: ubuntu
           scripts:
             - name: command1
-              context: "targetCluster"
+              context: "currentCluster"
               commands:
-                - 'Write-Output "command1 runs"'
+                - 'echo "commands can run on the currentCluster"'

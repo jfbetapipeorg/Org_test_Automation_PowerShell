@@ -5,19 +5,24 @@ resources:
       sourceArtifactory: s_artifactory
       pattern: "test-automation-generic-local/PowerShellLinuxVMDeploy_fileSpec.txt"
 
-  - name: myVMError
+  - name: myCurrentCluster
+    type: VmCluster
+    configuration:
+      sshKey: s_PS_VM_DEPLOY_SSHKEY
+      targets:
+        - ${int_s_VM_DEPLOY_VM_ADDRESS_1}
+
+  - name: myTargetCluster
     type: VmCluster
     configuration:
       sshKey: s_PS_VM_DEPLOY_SSHKEY
       targets:
         - ${int_s_VM_DEPLOY_VM_ADDRESS_0}
-        - ${int_s_VM_DEPLOY_VM_ADDRESS_ERROR_0}
-        - ${int_s_VM_DEPLOY_VM_ADDRESS_ERROR_1}
 
 pipelines:
-  - name: S_PS_LinuxVMDeploy_0003
+  - name: S_PS_LinuxVMDeploy_5950_0015
     steps:
-      - name: S_PS_LinuxVMDeploy_0003_1
+      - name: S_PS_LinuxVMDeploy_5950_0015_1
         type: Powershell
         configuration:
           nodePool: win_2019
@@ -29,19 +34,23 @@ pipelines:
           onExecute:
             - echo "File spec ${run_id}" > PowerShellLinuxVMDeploy_fileSpec.txt
             - jfrog rt upload PowerShellLinuxVMDeploy_fileSpec.txt test-automation-generic-local
-      # Check that deploy artifacts are uploaded to non-default dir.
-      - name: S_PS_LinuxVMDeploy_0003_2
+      - name: S_PS_LinuxVMDeploy_5950_0015_2
         type: jfrog_dev/LinuxVMDeploy
         configuration:
           nodePool: win_2019
           integrations:
             - name: s_VM_DEPLOY
           inputResources:
-            - name: myVMError
+            - name: myTargetCluster
+            - name: myCurrentCluster
             - name: PowerShellLinuxVMDeploy_fileSpec
           sshUser: ubuntu
+          strategy: "blueGreen"
           scripts:
             - name: command1
-              context: "targetCluster"
+              context: "buildNode"
               commands:
-                - 'Write-Output "command1 runs"'
+                - 'echo $Env:target_cluster_name'
+                - 'echo $run_number'
+                - 'if($run_number -eq 1 -and $Env:target_cluster_name -ne "myCurrentCluster"){ throw }'
+                - 'if($run_number -eq 2 -and $Env:target_cluster_name -ne "myTargetCluster"){ throw }'
