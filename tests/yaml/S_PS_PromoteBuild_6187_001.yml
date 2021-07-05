@@ -1,0 +1,78 @@
+template: true
+valuesFilePath: ../values/gitRepoValues.yml
+
+resources:
+  - name: S_PS_PromoteBuild_6187_001_GitRepo
+    type: GitRepo
+    configuration:
+      gitProvider: s_gitHub
+      path: {{ .Values.GitHub.Org_test_Automation_PowerShell.path }}
+      branches:
+        include: ^{{gitBranch}}$
+  - name: S_PS_PromoteBuild_6187_001_input
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: s_artifactory
+      buildName: name
+      buildNumber: '1'
+  - name: S_PS_PromoteBuild_6187_001_output
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: s_artifactory
+      buildName: name
+      buildNumber: '1'
+
+pipelines:
+  - name: pipeline_S_PS_PromoteBuild_6187_001
+    configuration:
+      nodePool: win_2019
+    steps:
+      - name: S_PS_PromoteBuild_6187_001_1
+        type: GoBuild
+        configuration:
+          inputResources:
+            - name: S_PS_PromoteBuild_6187_001_GitRepo
+          integrations:
+            - name: s_artifactory
+          sourceLocation: "tests/Go/HelloWorld"
+          resolverRepo: test-automation-go-virtual
+        execution:
+          onStart:
+            - add_run_variables JFROG_CLI_BUILD_NUMBER=${run_id}
+      - name: S_PS_PromoteBuild_6187_001_2
+        type: GoPublishBinary
+        configuration:
+          inputSteps:
+            - name: S_PS_PromoteBuild_6187_001_1
+          outputResources:
+            - name: S_PS_PromoteBuild_6187_001_input
+          targetRepository: test-automation-go-local
+          autoPublishBuildInfo: true
+      - name: S_PS_PromoteBuild_6187_001_3
+        type: PowerShell
+        configuration:
+          integrations:
+            - name: s_artifactory
+          inputSteps:
+            - name: S_PS_PromoteBuild_6187_001_2
+          inputResources:
+            - name: S_PS_PromoteBuild_6187_001_GitRepo
+        execution:
+          onExecute:
+            # Can't edit the buildinfo.json, so it has to be the signature.
+            - |
+              $head_sig_path = (jfrog rt search artifactory-pipe-info/pipeline_S_PS_PromoteBuild_6187_001/{{gitBranch}}/*/s-S_PS_PromoteBuild_6187_001_2.json.sig | ConvertFrom-Json)[0].path
+              jfrog rt upload $res_S_PS_PromoteBuild_6187_001_GitRepo_resourcePath/tests/artifacts/invalidGPGSig $head_sig_path --quiet
+      - name: S_PS_PromoteBuild_6187_001_4
+        type: PromoteBuild
+        configuration:
+          targetRepository: test-automation-generic-promoted-local
+          inputSteps:
+            - name: S_PS_PromoteBuild_6187_001_3
+          inputResources:
+            - name: S_PS_PromoteBuild_6187_001_input
+          outputResources:
+            - name: S_PS_PromoteBuild_6187_001_output
+        execution:
+          onComplete:
+            - jfrog rt delete artifactory-pipe-info/pipeline_S_PS_PromoteBuild_6187_001/{{gitBranch}} --quiet

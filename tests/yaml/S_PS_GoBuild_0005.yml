@@ -16,7 +16,7 @@ pipelines:
       nodePool: win_2019
       environmentVariables:
         readOnly:
-          source_location: "tests/Go"
+          source_location: "tests/Go/HelloWorld"
     steps:
       - name: S_PS_GoBuild_0005
         type: GoBuild
@@ -27,9 +27,3 @@ pipelines:
             - name: S_PS_GoBuild_0005_GitRepo
           sourceLocation: "${source_location}"
           resolverRepo: test-automation-go-virtual
-        execution:
-          onStart:
-            - Push-Location (find_resource_variable ${inputGitRepoResourceName} resourcePath)
-            - Push-Location (find_step_configuration_value sourceLocation)
-            - go get
-            - Pop-Location

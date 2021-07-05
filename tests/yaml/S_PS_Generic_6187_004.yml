@@ -1,0 +1,13 @@
+pipelines:
+  - name: pipeline_S_PS_Generic_6187_004
+    configuration:
+      nodePool: win_2019
+    steps:
+      - name: S_PS_Generic_6187_004_1
+        type: PowerShell
+        configuration:
+          integrations:
+            - name: s_artifactory
+        execution:
+          onExecute:
+            - save_artifact_info buildInfo output.json

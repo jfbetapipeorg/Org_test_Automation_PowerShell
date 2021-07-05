@@ -1,0 +1,32 @@
+pipelines:
+  - name: pipeline_S_PS_Generic_6187_001
+    configuration:
+      nodePool: win_2019
+    steps:
+      - name: S_PS_Generic_6187_001_1
+        type: PowerShell
+        configuration:
+          integrations:
+            - name: s_artifactory
+        execution:
+          onExecute:
+            - Set-Content -Path S_PS_Generic_6187_001.txt -Value ${run_id}
+            - jfrog rt upload S_PS_Generic_6187_001.txt test-automation-generic-local --insecure-tls=$no_verify_ssl --detailed-summary | Out-File output.json
+            - |
+              $artifactSha = (Get-Content output.json | ConvertFrom-Json).files[0].sha256
+              add_run_variables artifactSha=${artifactSha}
+            - Write-Output "${artifactSha}"
+            - save_artifact_info file output.json
+      - name: S_PS_Generic_6187_001_2
+        type: PowerShell
+        configuration:
+          integrations:
+            - name: s_artifactory
+          inputSteps:
+            - name: S_PS_Generic_6187_001_1
+        execution:
+          onExecute:
+            - |
+              $headers = @{ 'Authorization' = "apiToken $builder_api_token" }
+              $stepArtifact = Invoke-RestMethod -Method Get -ContentType 'application/json' -Headers $headers -Uri "${pipelines_api_url}/stepArtifacts?artifactPath=test-automation-generic-local%2FS_PS_Generic_6187_001.txt&artifactSha=${artifactSha}&artifactType=artifact" -UseBasicParsing
+              if ( $stepArtifact.artifactSha -ne $artifactSha ) { throw "SHA doesn't match" }

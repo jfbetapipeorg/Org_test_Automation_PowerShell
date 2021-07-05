@@ -22,14 +22,8 @@ pipelines:
             - name: S_PS_GoBuild_0016_GitRepo
           integrations:
             - name: s_artifactory
-          sourceLocation: "tests/Go"
+          sourceLocation: "tests/Go/HelloWorld"
           resolverRepo: test-automation-go-virtual
-        execution:
-          onStart:
-            - Push-Location (find_resource_variable ${inputGitRepoResourceName} resourcePath)
-            - Push-Location (find_step_configuration_value sourceLocation)
-            - go get
-            - Pop-Location
       - name: S_PS_GoBuild_0016_2
         type: PowerShell
         configuration:
@@ -46,7 +40,7 @@ pipelines:
             - if ( "${S_PS_GoBuild_0016_1_buildName}" -ne "${JFROG_CLI_BUILD_NAME}" ) { throw "Wrong build name" }
             - if ( "${S_PS_GoBuild_0016_1_isPromoted}" -ne "false" ) { throw "Wrong isPromoted" }
             - if ( "${S_PS_GoBuild_0016_1_outputStateName}" -ne "output" ) { throw "Wrong output name" }
-            - if ( "${S_PS_GoBuild_0016_1_sourceLocation}" -ne "tests/Go" ) { throw "Wrong location" }
+            - if ( "${S_PS_GoBuild_0016_1_sourceLocation}" -ne "tests/Go/HelloWorld" ) { throw "Wrong location" }
             - restore_run_files output output
             - if ( -not (Test-Path "output\S_PS_GoBuild_0016_1") ) { throw "TEST FAILED" }
             - restore_run_files jfrog jfrog

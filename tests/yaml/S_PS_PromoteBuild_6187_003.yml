@@ -1,0 +1,63 @@
+template: true
+valuesFilePath: ../values/gitRepoValues.yml
+
+resources:
+  - name: S_PS_PromoteBuild_6187_003_GitRepo
+    type: GitRepo
+    configuration:
+      gitProvider: s_gitHub
+      path: {{ .Values.GitHub.Org_test_Automation_PowerShell.path }}
+      branches:
+        include: ^{{gitBranch}}$
+  - name: S_PS_PromoteBuild_6187_003_input
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: s_artifactory
+      buildName: name
+      buildNumber: '1'
+  - name: S_PS_PromoteBuild_6187_003_output
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: s_artifactory
+      buildName: name
+      buildNumber: '1'
+
+pipelines:
+  - name: pipeline_S_PS_PromoteBuild_6187_003
+    steps:
+      - name: S_PS_PromoteBuild_6187_003_1
+        type: GoBuild
+        configuration:
+          nodePool: win_2019
+          inputResources:
+            - name: S_PS_PromoteBuild_6187_003_GitRepo
+          integrations:
+            - name: s_artifactory
+          sourceLocation: "tests/Go/HelloWorld"
+          resolverRepo: test-automation-go-virtual
+        execution:
+          onStart:
+            - add_run_variables JFROG_CLI_BUILD_NUMBER=${run_id}
+      - name: S_PS_PromoteBuild_6187_003_2
+        type: GoPublishBinary
+        configuration:
+          nodePool: win_2019
+          inputSteps:
+            - name: S_PS_PromoteBuild_6187_003_1
+          outputResources:
+            - name: S_PS_PromoteBuild_6187_003_input
+          targetRepository: test-automation-go-local
+          autoPublishBuildInfo: true
+      - name: S_PS_PromoteBuild_6187_003_3
+        type: PromoteBuild
+        configuration:
+          nodePool: win_2019
+          targetRepository: test-automation-generic-promoted-local
+          failOnValidate: true
+          inputResources:
+            - name: S_PS_PromoteBuild_6187_003_input
+          outputResources:
+            - name: S_PS_PromoteBuild_6187_003_output
+        execution:
+          onComplete:
+            - jfrog rt delete artifactory-pipe-info/pipeline_S_PS_PromoteBuild_6187_003/{{gitBranch}} --quiet

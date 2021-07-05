@@ -30,14 +30,8 @@ pipelines:
             - name: S_PS_GoPublishBinary_0008_GitRepo
           integrations:
             - name: s_artifactory
-          sourceLocation: "tests/Go"
+          sourceLocation: "tests/Go/HelloWorld"
           resolverRepo: test-automation-go-virtual
-        execution:
-          onStart:
-            - Push-Location (find_resource_variable ${inputGitRepoResourceName} resourcePath)
-            - Push-Location (find_step_configuration_value sourceLocation)
-            - go get
-            - Pop-Location
       - name: S_PS_GoPublishBinary_0008_2
         type: PowerShell
         configuration:

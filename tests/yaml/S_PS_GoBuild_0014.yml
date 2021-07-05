@@ -25,14 +25,9 @@ pipelines:
             - name: S_PS_GoBuild_0014_GitRepo
           integrations:
             - name: s_artifactory
-          sourceLocation: "tests/Go"
+          sourceLocation: "tests/Go/HelloWorld"
           resolverRepo: "${resolver_repo}"
         execution:
-          onStart:
-            - Push-Location (find_resource_variable ${inputGitRepoResourceName} resourcePath)
-            - Push-Location (find_step_configuration_value sourceLocation)
-            - go get
-            - Pop-Location
           onSuccess:
             - Push-Location (find_resource_variable ${inputGitRepoResourceName} resourcePath)
             - Push-Location (find_step_configuration_value sourceLocation)

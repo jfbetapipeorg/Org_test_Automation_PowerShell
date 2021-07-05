@@ -16,7 +16,7 @@ pipelines:
       nodePool: win_2019
       environmentVariables:
         readOnly:
-          source_location: "tests/Go"
+          source_location: "tests/Go/HelloWorld"
     steps:
       - name: S_PS_GoBuild_0004
         type: GoBuild
@@ -29,6 +29,5 @@ pipelines:
         execution:
           onStart:
             - Push-Location (find_resource_variable $inputGitRepoResourceName resourcePath)
-            - Copy-Item -Path "tests\Go\*" -Recurse
-            - go get
+            - Copy-Item -Path "tests\Go\HelloWorld\*" -Recurse
             - Pop-Location

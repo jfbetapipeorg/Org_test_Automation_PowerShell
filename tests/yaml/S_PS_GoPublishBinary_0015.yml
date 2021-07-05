@@ -30,14 +30,10 @@ pipelines:
             - name: S_PS_GoPublishBinary_0015_GitRepo
           integrations:
             - name: s_artifactory
-          sourceLocation: "tests/Go"
+          sourceLocation: "tests/Go/HelloWorld"
           resolverRepo: test-automation-go-virtual
         execution:
           onStart:
-            - Push-Location (find_resource_variable ${inputGitRepoResourceName} resourcePath)
-            - Push-Location (find_step_configuration_value sourceLocation)
-            - go get
-            - Pop-Location
             - add_run_variables JFROG_CLI_ENV_EXCLUDE="*myenvironmentvariable*;*password*;*secret*;*key*;*token*"
       - name: S_PS_GoPublishBinary_0015_2
         type: GoPublishBinary

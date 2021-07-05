@@ -1,0 +1,22 @@
+pipelines:
+  - name: pipeline_S_PS_Generic_6187_005
+    configuration:
+      nodePool: win_2019
+    steps:
+      - name: S_PS_Generic_6187_005_1
+        type: PowerShell
+        configuration:
+          integrations:
+            - name: s_artifactory
+        execution:
+          onExecute:
+            - Set-Content -Path S_PS_Generic_6187_005.txt -Value ${run_id}
+            - jfrog rt upload S_PS_Generic_6187_005.txt test-automation-generic-local --insecure-tls=$no_verify_ssl --detailed-summary | Out-File output.json
+            - |
+              $artifactSha = (Get-Content output.json | ConvertFrom-Json).files[0].sha256
+              add_run_variables artifactSha=${artifactSha}
+            - Write-Output "${artifactSha}"
+            - save_artifact_info file output.json -project-key myProject
+            - |
+              $artifactProjectKey = (Get-Content output.json | ConvertFrom-Json).projectKey
+              if ( $artifactProjectKey -ne "myProject" ) { throw "Project key doesn't match" }

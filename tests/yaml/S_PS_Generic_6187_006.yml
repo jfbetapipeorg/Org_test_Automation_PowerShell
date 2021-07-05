@@ -1,0 +1,35 @@
+pipelines:
+  - name: pipeline_S_PS_Generic_6187_006
+    configuration:
+      nodePool: win_2019
+    steps:
+      - name: S_PS_Generic_6187_006_1
+        type: PowerShell
+        configuration:
+          integrations:
+            - name: s_artifactory
+        execution:
+          onExecute:
+            - add_run_variables JFROG_CLI_BUILD_NUMBER=${run_id}
+            - Set-Content -Path S_PS_Generic_6187_006.txt -Value ${run_id}
+            - jfrog rt upload S_PS_Generic_6187_006.txt test-automation-generic-local --insecure-tls=$no_verify_ssl
+            - jfrog rt build-publish --detailed-summary --insecure-tls=${no_verify_ssl} ${JFROG_CLI_BUILD_NAME} ${JFROG_CLI_BUILD_NUMBER} | Out-File output.json
+            - |
+              $artifactSha = (Get-Content output.json | ConvertFrom-Json).files[0].sha256
+              add_run_variables artifactSha=${artifactSha}
+            - Write-Output "${artifactSha}"
+            - save_artifact_info buildInfo output.json -build-name "$JFROG_CLI_BUILD_NAME" -build-number $JFROG_CLI_BUILD_NUMBER
+
+      - name: S_PS_Generic_6187_006_2
+        type: PowerShell
+        configuration:
+          integrations:
+            - name: s_artifactory
+          inputSteps:
+           - name: S_PS_Generic_6187_006_1
+        execution:
+          onExecute:
+            - validate_artifact buildInfo -build-name "$JFROG_CLI_BUILD_NAME" -build-number ${run_id} | Out-File validationResponse.json
+            - Get-Content validationResponse.json
+            - jfrog rt curl -XDELETE "/api/build/${JFROG_CLI_BUILD_NAME}?buildNumbers=${run_id}&artifacts=1"
+            - if ( -not (Get-Content validationResponse.json | ConvertFrom-Json) ) { throw "Build Info not valid." }
