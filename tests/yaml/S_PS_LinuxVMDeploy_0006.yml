@@ -11,7 +11,7 @@ resources:
     configuration:
       sourceDistribution: s_distribution
       name: S_PS_LinuxVMDeploy_0006
-      version: ${run_id}
+      version: "10"
 
   - name: PowershellVM
     type: VmCluster
@@ -40,8 +40,10 @@ pipelines:
       - name: S_PS_LinuxVMDeploy_0006_2
         type: CreateReleaseBundle
         configuration:
-          releaseBundleName: ${pipeline_name}
-          releaseBundleVersion: ${run_id}
+          integrations:
+            - name: s_artifactory
+          releaseBundleName: S_PS_LinuxVMDeploy_0006
+          releaseBundleVersion: "10"
           dryRun: false
           sign: true
           inputSteps:
