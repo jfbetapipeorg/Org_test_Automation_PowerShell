@@ -41,6 +41,9 @@ pipelines:
           inputResources:
             - name: myVM
             - name: PowerShellLinuxVMDeploy_fileSpec
-          deployCommand: "ls ~/${step_name}/${run_id}/PowerShellLinuxVMDeploy_fileSpec.txt || exit 1"
-          postDeployCommand: "ls ~/${step_name}/${run_id}/PowerShellLinuxVMDeploy_fileSpec.txt || exit 1"
           sshUser: ubuntu
+          scripts:
+            - name: command1
+              context: "targetCluster"
+              commands:
+                - "ls ~/${step_name}/${run_id}/PowerShellLinuxVMDeploy_fileSpec.txt || exit 1"

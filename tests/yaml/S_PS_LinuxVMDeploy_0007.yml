@@ -25,8 +25,9 @@ pipelines:
   - name: S_PS_LinuxVMDeploy_0007
     steps:
       - name: S_PS_LinuxVMDeploy_0007_1
-        type: Bash
+        type: PowerShell
         configuration:
+          nodePool: win_2019
           integrations:
             - name: s_artifactory
           outputResources:
@@ -65,13 +66,18 @@ pipelines:
           inputResources:
             - name: PowershellVM
             - name: PowershellLinuxVMDeploy_releaseBundle
-          deployCommand: "echo 'this should never execute'"
           sshUser: ubuntu
+          scripts:
+            - name: command1
+              context: "targetCluster"
+              commands:
+                - "echo 'this should never execute'"
 
       # Clean up releaseBundle
       - name: S_PS_LinuxVMDeploy_0007_4
-        type: Bash
+        type: PowerShell
         configuration:
+          nodePool: win_2019
           integrations:
             - name: s_distribution
           inputSteps:

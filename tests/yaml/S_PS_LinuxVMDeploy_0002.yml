@@ -44,6 +44,10 @@ pipelines:
             - name: myVM
             - name: LinuxVMDeploy_fileSpec
           # Fail the test if the file does not exist in the right path on the vm.
-          deployCommand: "ls ${target_directory}/LinuxVMDeploy_fileSpec.txt || exit 1"
           sshUser: ubuntu
           rolloutDelaySecs: 3
+          scripts:
+            - name: command1
+              context: "targetCluster"
+              commands:
+                - "ls $target_directory/LinuxVMDeploy_fileSpec.txt || exit 1"

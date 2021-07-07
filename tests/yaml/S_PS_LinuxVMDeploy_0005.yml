@@ -42,5 +42,9 @@ pipelines:
           inputResources:
             - name: myVM
             - name: PowerShellLinuxVMDeploy_buildInfo
-          deployCommand: "ls ~/${step_name}/${run_id}/PowerShellLinuxVMDeploy_buildInfo.txt || exit 1"
           sshUser: ubuntu
+          scripts:
+            - name: command1
+              context: "buildNode"
+              commands:
+                - 'Write-Output "command1"'

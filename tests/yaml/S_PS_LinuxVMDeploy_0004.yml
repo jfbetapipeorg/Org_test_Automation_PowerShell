@@ -38,7 +38,10 @@ pipelines:
           inputResources:
             - name: myVMError
             - name: PowerShellLinuxVMDeploy_fileSpec
-          deployCommand: "echo 'deployCommand runs.'"
-          rollbackCommand: "echo 'rollBackCommand runs.'"
           sshUser: ubuntu
           fastFail: false
+          scripts:
+            - name: command1
+              context: "targetCluster"
+              commands:
+                - 'Write-Output "command1 runs"'
