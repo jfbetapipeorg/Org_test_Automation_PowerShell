@@ -1,0 +1,57 @@
+template: true
+valuesFilePath: ../values/gitRepoValues.yml
+
+resources:
+  - name: S_PS_NpmPublish_6191_007_GitRepo
+    type: GitRepo
+    configuration:
+      gitProvider: s_gitHub
+      path: {{ .Values.GitHub.Org_test_Automation_PowerShell.path }}
+      branches:
+        include: {{gitBranch}}
+  - name: S_PS_NpmPublish_6191_007_BuildInfo
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: s_artifactory
+
+pipelines:
+  - name: pipeline_S_PS_NpmPublish_6191_007
+    configuration:
+      nodePool: win_2019
+    steps:
+      - name: S_PS_NpmPublish_6191_007_1
+        type: NpmBuild
+        configuration:
+          sourceLocation: "tests/npm"
+          resolverRepo: "test-automation-npm-remote"
+          inputResources:
+            - name: S_PS_NpmPublish_6191_007_GitRepo
+          integrations:
+            - name: s_artifactory
+        execution:
+          onStart:
+            - add_run_variables JFROG_CLI_BUILD_NUMBER=${run_id}
+      - name: S_PS_NpmPublish_6191_007_2
+        type: NpmPublish
+        configuration:
+          autoPublishBuildInfo: true
+          deployerRepo: "test-automation-npm-local"
+          inputSteps:
+            - name: S_PS_NpmPublish_6191_007_1
+          outputResources:
+            - name: S_PS_NpmPublish_6191_007_BuildInfo
+          integrations:
+            - name: s_artifactory
+      - name: S_PS_NpmPublish_6191_007_3
+        type: PowerShell
+        configuration:
+          inputResources:
+            - name: S_PS_NpmPublish_6191_007_BuildInfo
+          integrations:
+            - name: s_artifactory
+        execution:
+          onExecute:
+            - jfrog rt curl -XGET /api/build/${JFROG_CLI_BUILD_NAME}/${JFROG_CLI_BUILD_NUMBER} -o ${step_tmp_dir}/response
+            - jfrog rt curl -XDELETE "/api/build/${JFROG_CLI_BUILD_NAME}?buildNumbers=${JFROG_CLI_BUILD_NUMBER}&artifacts=1"
+            - if ( "$res_S_PS_NpmPublish_6191_007_BuildInfo_buildName" -ne "${JFROG_CLI_BUILD_NAME}" ) { throw "Wrong build name" }
+            - if ( "$res_S_PS_NpmPublish_6191_007_BuildInfo_buildNumber" -ne "${JFROG_CLI_BUILD_NUMBER}" ) { throw "Wrong build number" }

@@ -1,0 +1,12 @@
+{
+  "name": "npm-example",
+  "version": "0.0.1",
+  "description": "For the purpose of testing npm steps",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "underscore": "1.13.1"
+  }
+}

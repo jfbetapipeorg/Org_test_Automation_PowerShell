@@ -1,0 +1,50 @@
+resources:
+  - name: S_PS_PublishBuildInfo_6191_001_output
+    type: BuildInfo
+    configuration:
+      sourceArtifactory: s_artifactory
+
+pipelines:
+  - name: pipeline_S_PS_PublishBuildInfo_6191_001
+    steps:
+      - name: S_PS_PublishBuildInfo_6191_001_1
+        type: PowerShell
+        configuration:
+          nodePool: win_2019
+          integrations:
+            - name: s_artifactory
+        execution:
+          onExecute:
+            - add_run_variables JFROG_CLI_BUILD_NUMBER=${run_id}
+            - Set-Content -Path S_PS_PublishBuildInfo_6191_001.txt -Value ${run_id}
+            - Invoke-Expression "jfrog rt upload S_PS_PublishBuildInfo_6191_001.txt test-automation-generic-local"
+            - add_run_variables buildName=${JFROG_CLI_BUILD_NAME} buildNumber=${JFROG_CLI_BUILD_NUMBER}
+            - add_run_files (Join-Path ([System.IO.Path]::GetTempPath()) jfrog) jfrog
+      - name: S_PS_PublishBuildInfo_6191_001_2
+        type: PublishBuildInfo
+        configuration:
+          nodePool: win_2019
+          outputResources:
+            - name: S_PS_PublishBuildInfo_6191_001_output
+          inputSteps:
+            - name: S_PS_PublishBuildInfo_6191_001_1
+      - name: S_PS_PublishBuildInfo_6191_001_3
+        type: PowerShell
+        configuration:
+          nodePool: win_2019
+          integrations:
+            - name: s_artifactory
+          inputResources:
+            - name: S_PS_PublishBuildInfo_6191_001_output
+        execution:
+          onExecute:
+            - |
+              $buildInfoFilePath = (jfrog rt search "*/${JFROG_CLI_BUILD_NAME}/${run_id}*.json" | ConvertFrom-JSON)[0].path
+              $artifactSha = (jfrog rt curl -XGET /api/storage/${buildInfoFilePath} | ConvertFrom-JSON).checksums.sha256
+              if ( "${project_key}" -eq "" ) { $project="default" } else { $project="${project_key}" }
+              $artifactPath = "${project}/${JFROG_CLI_BUILD_NAME}/${run_id}"
+              $headers = @{}
+              $headers['Authorization'] = "apiToken $builder_api_token"
+              $stepArtifact = Invoke-RestMethod -Method Get -ContentType 'application/json' -Headers $headers -Uri "${pipelines_api_url}/stepArtifacts?artifactPath=${artifactPath}&artifactSha=${artifactSha}&artifactType=buildInfo" -UseBasicParsing
+              jfrog rt curl -XDELETE "/api/build/${JFROG_CLI_BUILD_NAME}?buildNumbers=${run_id}&artifacts=1"
+              if ( $stepArtifact.artifactSha -ne $artifactSha ) { throw "SHA doesn't match" }

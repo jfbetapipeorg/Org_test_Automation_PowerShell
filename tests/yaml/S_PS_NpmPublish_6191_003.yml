@@ -1,0 +1,37 @@
+template: true
+valuesFilePath: ../values/gitRepoValues.yml
+
+resources:
+  - name: S_PS_NpmPublish_6191_003_GitRepo
+    type: GitRepo
+    configuration:
+      gitProvider: s_gitHub
+      path: {{ .Values.GitHub.Org_test_Automation_PowerShell.path }}
+      branches:
+        include: {{gitBranch}}
+
+pipelines:
+  - name: pipeline_S_PS_NpmPublish_6191_003
+    configuration:
+      nodePool: win_2019
+    steps:
+      - name: S_PS_NpmPublish_6191_003_1
+        type: NpmBuild
+        configuration:
+          integrations:
+            - name: s_artifactory
+          inputResources:
+            - name: S_PS_NpmPublish_6191_003_GitRepo
+          sourceLocation: "tests/npm"
+          repositoryName: test-automation-npm-remote
+        execution:
+          onStart:
+            - add_run_variables JFROG_CLI_BUILD_NUMBER=${run_id}
+      - name: S_PS_NpmPublish_6191_003_2
+        type: NpmPublish
+        configuration:
+          integrations:
+            - name: s_artifactory
+          inputSteps:
+            - name: S_PS_NpmPublish_6191_003_1
+          deployerRepo: "test-automation-npm-local"

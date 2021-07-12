@@ -1,0 +1,39 @@
+template: true
+valuesFilePath: ../values/gitRepoValues.yml
+
+resources:
+  - name: S_PS_HelmPublish_6191_004_GitRepo
+    type: GitRepo
+    configuration:
+      gitProvider: s_gitHub
+      path: {{ .Values.GitHub.Org_test_Automation_PowerShell.path }}
+      branches:
+        include: {{gitBranch}}
+  - name: S_PS_HelmPublish_6191_004_HelmChart
+    type: HelmChart
+    configuration:
+      sourceArtifactory: s_artifactory
+      repository: test-automation-helm-local
+      version: version
+      chart: chart
+
+pipelines:
+  - name: pipeline_S_PS_HelmPublish_6191_004
+    configuration:
+      nodePool: win_2019
+    steps:
+      - name: S_PS_HelmPublish_6191_004_1
+        type: HelmPublish
+        configuration:
+          environmentVariables:
+            chartDirectory: "tests/helmCharts"
+          chartPath: "./${chartDirectory}/myChart"
+          inputResources:
+            - name: S_PS_HelmPublish_6191_004_GitRepo
+          outputResources:
+            - name: S_PS_HelmPublish_6191_004_HelmChart
+          integrations:
+            - name: s_artifactory
+        execution:
+          onStart:
+            - add_run_variables JFROG_CLI_BUILD_NUMBER=${run_id}
